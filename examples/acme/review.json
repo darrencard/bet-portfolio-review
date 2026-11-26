@@ -1,0 +1,412 @@
+{
+  "as_of": "2026-11-26",
+  "illustrative": true,
+  "sources": {
+    "bets": "bets.csv",
+    "work": "work.csv",
+    "readings": "readings.csv"
+  },
+  "total_points": 14,
+  "portfolio": {
+    "Bets on the roadmap": {
+      "value": "8",
+      "computed_from": "bets.csv"
+    },
+    "Bets with a complete brief": {
+      "value": "5",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Work items": {
+      "value": "19",
+      "computed_from": "work.csv"
+    },
+    "Work items linked to no bet": {
+      "value": "3",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Share of work linked to a bet": {
+      "value": "84%",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Share of work under a bet with a definition of good": {
+      "value": "68%",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Bets landed": {
+      "value": "1",
+      "computed_from": "bets.csv, readings.csv"
+    },
+    "Bets watch": {
+      "value": "1",
+      "computed_from": "bets.csv, readings.csv"
+    },
+    "Bets stalled": {
+      "value": "1",
+      "computed_from": "bets.csv, readings.csv"
+    },
+    "Bets with no status word": {
+      "value": "5",
+      "computed_from": "bets.csv, readings.csv"
+    }
+  },
+  "gap_counts": {
+    "no-owner": 1,
+    "no-brief": 1,
+    "no-metric": 1,
+    "no-cost-budget": 1,
+    "no-non-goals": 1,
+    "no-problem": 0,
+    "no-line": 0,
+    "no-decider": 0,
+    "no-work": 1,
+    "reading-no-source": 1,
+    "reading-no-history": 1,
+    "date-passed": 1,
+    "never-read": 2
+  },
+  "bets": [
+    {
+      "rank": 1,
+      "id": "ACME-B5",
+      "name": "Payments onboarding revamp",
+      "owner": "Payments squad lead",
+      "source": "bets.csv row 6",
+      "points": 4,
+      "percent": 29,
+      "gaps": [
+        "no-brief"
+      ],
+      "status": null,
+      "cost_per_task": null,
+      "linked_work": [
+        "ACME-140",
+        "ACME-141"
+      ],
+      "next_step": "Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.",
+      "figures": [
+        "1",
+        "14",
+        "2",
+        "29",
+        "4",
+        "5",
+        "6"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "ACME-B6",
+      "name": "Trade directory listing",
+      "owner": "",
+      "source": "bets.csv row 7",
+      "points": 8,
+      "percent": 57,
+      "gaps": [
+        "no-owner",
+        "no-metric"
+      ],
+      "status": null,
+      "cost_per_task": null,
+      "linked_work": [
+        "ACME-150"
+      ],
+      "next_step": "Name one owner for this bet.",
+      "figures": [
+        "1",
+        "14",
+        "2",
+        "57",
+        "6",
+        "7",
+        "8"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "ACME-B4",
+      "name": "Supplier price sync",
+      "owner": "Catalogue squad lead",
+      "source": "bets.csv row 5",
+      "points": 10,
+      "percent": 71,
+      "gaps": [
+        "no-cost-budget",
+        "no-non-goals",
+        "never-read"
+      ],
+      "status": null,
+      "cost_per_task": null,
+      "linked_work": [
+        "ACME-130",
+        "ACME-131"
+      ],
+      "next_step": "State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code.",
+      "figures": [
+        "02",
+        "10",
+        "14",
+        "2",
+        "2027",
+        "28",
+        "3",
+        "30",
+        "4",
+        "5",
+        "71"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "ACME-B7",
+      "name": "Crew scheduling",
+      "owner": "Field squad lead",
+      "source": "bets.csv row 8",
+      "points": 13,
+      "percent": 93,
+      "gaps": [
+        "no-work",
+        "date-passed",
+        "never-read"
+      ],
+      "status": null,
+      "cost_per_task": null,
+      "linked_work": [],
+      "next_step": "Link the work that delivers this bet, or cut the bet.",
+      "figures": [
+        "0",
+        "10",
+        "13",
+        "14",
+        "2,",
+        "2026",
+        "31",
+        "4",
+        "7",
+        "8",
+        "93"
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "ACME-B2",
+      "name": "Invoice chasing",
+      "owner": "Payments squad lead",
+      "source": "bets.csv row 3",
+      "points": 14,
+      "percent": 100,
+      "gaps": [],
+      "status": "stalled",
+      "cost_per_task": 0.018000000000000002,
+      "linked_work": [
+        "ACME-110",
+        "ACME-111",
+        "ACME-112"
+      ],
+      "next_step": "Head of Product decides: change the approach or stop the bet.",
+      "figures": [
+        "0.000003",
+        "0.018",
+        "100",
+        "11",
+        "12",
+        "14",
+        "14,",
+        "15",
+        "17",
+        "18",
+        "2",
+        "2026",
+        "24",
+        "3",
+        "5",
+        "6000"
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "ACME-B8",
+      "name": "Owner reporting dashboards",
+      "owner": "Insights squad lead",
+      "source": "bets.csv row 9",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "reading-no-source"
+      ],
+      "status": null,
+      "cost_per_task": 0.012,
+      "linked_work": [
+        "ACME-170",
+        "ACME-171"
+      ],
+      "next_step": "Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word.",
+      "figures": [
+        "0.000003",
+        "0.012",
+        "01",
+        "100",
+        "11",
+        "14",
+        "15",
+        "2",
+        "2026",
+        "2027",
+        "24",
+        "28",
+        "31",
+        "35",
+        "4000",
+        "5",
+        "6",
+        "8",
+        "9"
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "ACME-B3",
+      "name": "Mobile job sheets",
+      "owner": "Field squad lead",
+      "source": "bets.csv row 4",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "reading-no-history"
+      ],
+      "status": "watch",
+      "cost_per_task": null,
+      "linked_work": [
+        "ACME-120",
+        "ACME-121",
+        "ACME-122"
+      ],
+      "next_step": "Take the next reading of Job sheets completed on mobile before 2027-01-31.",
+      "figures": [
+        "01",
+        "100",
+        "11",
+        "14",
+        "2026",
+        "2027",
+        "22",
+        "24",
+        "3",
+        "31",
+        "4",
+        "60",
+        "7"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "ACME-B1",
+      "name": "Quote drafting assistant",
+      "owner": "Quotes squad lead",
+      "source": "bets.csv row 2",
+      "points": 14,
+      "percent": 100,
+      "gaps": [],
+      "status": "landed",
+      "cost_per_task": 0.027,
+      "linked_work": [
+        "ACME-101",
+        "ACME-102",
+        "ACME-103"
+      ],
+      "next_step": "Record it as landed. Head of Product decides what comes next.",
+      "figures": [
+        "0.000003",
+        "0.027",
+        "1",
+        "100",
+        "11",
+        "12",
+        "14",
+        "2",
+        "2026",
+        "24",
+        "3",
+        "31",
+        "36",
+        "40",
+        "43",
+        "8",
+        "9000"
+      ]
+    }
+  ],
+  "orphans": [
+    {
+      "id": "ACME-180",
+      "why": "no bet",
+      "source": "work.csv row 18"
+    },
+    {
+      "id": "ACME-181",
+      "why": "no bet",
+      "source": "work.csv row 19"
+    },
+    {
+      "id": "ACME-182",
+      "why": "links to ACME-B9, which is not on the roadmap",
+      "source": "work.csv row 20"
+    }
+  ],
+  "figures": [
+    "0",
+    "0.000003",
+    "0.012",
+    "0.018",
+    "0.027",
+    "01",
+    "02",
+    "1",
+    "10",
+    "100",
+    "11",
+    "12",
+    "13",
+    "14",
+    "14,",
+    "15",
+    "17",
+    "18",
+    "180",
+    "181",
+    "182",
+    "19",
+    "2",
+    "2,",
+    "20",
+    "2026",
+    "2027",
+    "22",
+    "24",
+    "26",
+    "28",
+    "29",
+    "3",
+    "30",
+    "31",
+    "35",
+    "36",
+    "4",
+    "40",
+    "4000",
+    "43",
+    "5",
+    "57",
+    "6",
+    "60",
+    "6000",
+    "68",
+    "7",
+    "71",
+    "8",
+    "84",
+    "9",
+    "9,",
+    "9000",
+    "93"
+  ]
+}

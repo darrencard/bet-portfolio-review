@@ -31,16 +31,31 @@ CAUSAL = re.compile(
 )
 
 
+def owners(lines: list[str], ids: list[str]) -> list[str | None]:
+    """The bet each line is about: a line that names one bet as "(ID)", or a line inside that bet's ### section."""
+    out: list[str | None] = []
+    current = None
+    for line in lines:
+        named = [i for i in ids if f"({i})" in line]
+        if line.startswith("#"):
+            current = named[0] if line.startswith("### ") and len(named) == 1 else None
+        out.append(named[0] if len(named) == 1 else (None if named else current))
+    return out
+
+
 def check(text: str, computed: dict) -> list[str]:
     errors = []
     allowed = set(computed.get("figures", []))
-    for line_no, line in enumerate(text.splitlines(), start=1):
+    per_bet = {b["id"]: set(b.get("figures", [])) for b in computed.get("bets", [])}
+    lines = text.splitlines()
+    for line_no, (line, owner) in enumerate(zip(lines, owners(lines, list(per_bet))), start=1):
         for n in NUMBER.findall(line):
-            if n not in allowed:
+            if owner is not None and n not in per_bet[owner]:
+                errors.append(f"line {line_no}: figure-not-computed: {n} is not one of {owner}'s computed figures.")
+            elif n not in allowed:
                 errors.append(f"line {line_no}: figure-not-computed: {n} was not in the computed review.")
         if CAUSAL.search(line):
             errors.append(f'line {line_no}: causal-claim: "{CAUSAL.search(line).group(0)}". A metric moving is not proof the bet moved it.')
-    lines = text.splitlines()
     for bet in computed.get("bets", []):
         mentions = [(i, x) for i, x in enumerate(lines, start=1) if f"({bet['id']})" in x]
         if not mentions:

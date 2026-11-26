@@ -84,7 +84,7 @@ def by_id(pf: score.Portfolio) -> dict[str, score.Review]:
 class Brief(unittest.TestCase):
     def test_full_brief_scores_every_point(self):
         r = score.review_bet(bet(), [work()], AS_OF)
-        self.assertEqual((r.points, r.percent, r.gaps), (score.TOTAL, 100, []))
+        self.assertEqual((r.points, r.percent, r.gaps), (score.TOTAL, 100, ["never-read"]))
         self.assertIsNotNone(r.brief, "a complete brief also passes the strict landing_brief parser")
 
     def test_no_brief_fails_every_brief_check(self):
@@ -130,8 +130,20 @@ class Brief(unittest.TestCase):
         r = by_id(acme())
         self.assertEqual(r["ACME-B5"].gaps, ["no-brief"])
         self.assertEqual(r["ACME-B6"].gaps, ["no-owner", "no-metric"])
-        self.assertEqual(r["ACME-B4"].gaps, ["no-cost-budget", "no-non-goals"])
-        self.assertEqual(r["ACME-B7"].gaps, ["no-work", "date-passed"])
+        self.assertEqual(r["ACME-B4"].gaps, ["no-cost-budget", "no-non-goals", "never-read"])
+        self.assertEqual(r["ACME-B7"].gaps, ["no-work", "date-passed", "never-read"])
+
+    def test_placeholders_do_not_earn_points(self):
+        for line, new in (("- Metric: Quotes sent within 24 hours", "- Metric: TBD"), ("- Non-goals: No pricing advice.", "- Non-goals: n/a")):
+            with self.subTest(new=new):
+                r = score.review_bet(bet(FULL.replace(line, new)), [work()], AS_OF)
+                self.assertLess(r.points, score.TOTAL)
+
+    def test_never_read_is_flagged_but_costs_no_points(self):
+        r = score.review_bet(bet(), [work()], AS_OF)
+        self.assertIn("never-read", r.gaps)
+        self.assertEqual(r.points, score.TOTAL)
+        self.assertTrue(r.next_step.startswith("Take the first reading"))
 
 
 class Readings(unittest.TestCase):
@@ -182,6 +194,9 @@ class Orphans(unittest.TestCase):
         self.assertIn("ACME-B9", pf.orphans[2].why)
         self.assertEqual(pf.work_total, 19)
         self.assertEqual(pf.linked_percent, round(100 * 16 / 19))
+        # B1, B2, B3, B4 (3+3+3+2) and B7 (0) and B8 (2) have a definition of good; B5 and B6 do not.
+        self.assertEqual(pf.judged_work, 13)
+        self.assertEqual(pf.judged_percent, round(100 * 13 / 19))
 
     def test_link_by_name(self):
         self.assertEqual(len(by_id(acme())["ACME-B5"].work), 2, "one item links by id, one by the bet's name")
@@ -217,8 +232,8 @@ class Formats(unittest.TestCase):
         bets = load.linear_bets(ACME / "linear-projects.json")
         pf = score.review(bets, load.linear_work(ACME / "linear-issues.json"), AS_OF)
         r = by_id(pf)
-        self.assertEqual(r["proj-quotes"].gaps, [])
-        self.assertEqual(r["proj-chasing"].gaps, ["no-cost-budget", "no-non-goals"])
+        self.assertEqual(r["proj-quotes"].gaps, ["never-read"])
+        self.assertEqual(r["proj-chasing"].gaps, ["no-cost-budget", "no-non-goals", "never-read"])
         self.assertEqual(r["proj-directory"].gaps, ["no-owner", "no-brief", "no-work"])
         self.assertEqual([o.work.id for o in pf.orphans], ["ACM-4"])
 
@@ -230,7 +245,7 @@ class Formats(unittest.TestCase):
         bets, items = load.jira(ACME / "jira-export.csv")
         pf = score.review(bets, items, AS_OF)
         r = by_id(pf)
-        self.assertEqual(r["ACME-1"].gaps, [], "a multi-line Description cell holds the brief")
+        self.assertEqual(r["ACME-1"].gaps, ["never-read"], "a multi-line Description cell holds the brief")
         self.assertEqual(len(r["ACME-1"].work), 2, "linked by Parent key and by Parent issue id")
         self.assertEqual(r["ACME-2"].gaps, ["no-brief"])
         self.assertEqual([o.work.id for o in pf.orphans], ["ACME-14"])
@@ -239,7 +254,7 @@ class Formats(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "b.csv"
             path.write_text('id,name,owner,description\nB1,Quotes,Lead,"' + FULL + '"\n', encoding="utf-8")
-            self.assertEqual(score.review_bet(load.csv_bets(path)[0], [work()], AS_OF).gaps, [])
+            self.assertEqual(score.review_bet(load.csv_bets(path)[0], [work()], AS_OF).gaps, ["never-read"])
 
     def test_refusals(self):
         with tempfile.TemporaryDirectory() as d:
@@ -274,6 +289,33 @@ class Output(unittest.TestCase):
             self.assertEqual(data["portfolio"]["Bets on the roadmap"], {"value": "8", "computed_from": "bets.csv"})
             self.assertEqual(validate.check(md, data), [])
 
+    def test_fail_on_exits_2_for_ci(self):
+        with tempfile.TemporaryDirectory() as d:
+            argv = ["--demo", "--out", d]
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(review.main([*argv, "--fail-on", "no-owner"]), 2)
+                self.assertEqual(review.main([*argv, "--fail-on", "no-line"]), 0)
+                with self.assertRaises(SystemExit):
+                    review.main([*argv, "--fail-on", "no-such-gap"])
+
+    def test_do_these_first(self):
+        md = render.to_markdown(acme(), "t", {}, False)
+        head = md.split("## Ranked review")[0]
+        self.assertIn("## Do these first", head)
+        self.assertIn("1. **Payments onboarding revamp (ACME-B5):**", head)
+
+    def test_checked_in_example_is_current(self):
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                review.main(["--demo", "--out", d])
+            for name in ("review.md", "review.html"):
+                with self.subTest(name=name):
+                    self.assertEqual(
+                        (Path(d) / name).read_text(encoding="utf-8"),
+                        (ROOT / "examples" / "acme" / name).read_text(encoding="utf-8"),
+                        "regenerate with: python3 skills/bet-portfolio-review/scripts/review.py --demo --out examples/acme",
+                    )
+
     def test_deterministic(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             self.run_cli(Path(a))
@@ -306,6 +348,13 @@ class Claims(unittest.TestCase):
     def test_added_figure(self):
         errors = validate.check(self.md + "\nThe quote assistant saved 3,217 hours.\n", self.data)
         self.assertTrue(any("figure-not-computed: 3,217" in e for e in errors))
+
+    def test_figure_moved_to_another_bet(self):
+        # 43% is ACME-B1's reading; printing it on ACME-B2's row is refused even though 43 appears in the review.
+        old = "| Invoice chasing (ACME-B2) | Payments squad lead |"
+        edited = self.md.replace(old, "| Invoice chasing (ACME-B2), now at 43% | Payments squad lead |")
+        self.assertIn("43", self.data["figures"])
+        self.assertTrue(any("not one of ACME-B2's computed figures" in e for e in validate.check(edited, self.data)))
 
     def test_changed_status(self):
         old = "| Invoice chasing (ACME-B2) | Payments squad lead | 14 of 14 (100%) | None | stalled"

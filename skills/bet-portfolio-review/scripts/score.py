@@ -68,8 +68,10 @@ LABELS = {
     "reading-no-source": "Reading has no source",
     "reading-no-history": "Reading has no prior value",
     "date-passed": "Date passed without landing",
+    "never-read": "Metric never read",
 }
 ORDER = list(LABELS)
+PLACEHOLDERS = {"", "tbd", "tbc", "todo", "n/a", "na", "-", "?", "unknown", "later"}
 URGENCY = {"stalled": 0, None: 1, "watch": 2, "landed": 3}
 
 
@@ -109,7 +111,9 @@ def parts_of(text: str) -> tuple[dict[str, str], list[str]]:
         if not m or not name:
             unread.append(line[:80])
             continue
-        found.setdefault(name, m.group(2).strip().strip("*_").strip())
+        text = m.group(2).strip().strip("*_").strip()
+        # A placeholder is not an answer: "TBD" in a field must not earn its points.
+        found.setdefault(name, "" if text.lower().strip(".?! ") in PLACEHOLDERS else text)
     return found, unread
 
 
@@ -131,7 +135,7 @@ def check(bet: Bet, work: list[Work]) -> tuple[dict[str, str], dict[str, bool], 
     passed["problem"] = bool(p.get("problem"))
     passed["decider"] = bool(p.get("decides"))
     nongoals = p.get("non_goals", "")
-    passed["non_goals"] = bool(nongoals) and nongoals.lower().strip(". ") not in ("none", "n/a", "tbd", "-")
+    passed["non_goals"] = bool(nongoals) and nongoals.lower().strip(". ") != "none"
 
     metric_missing = []
     if not p.get("metric"):
@@ -193,6 +197,8 @@ def review_bet(bet: Bet, work: list[Work], as_of: str) -> Review:
             status = landing_brief.status_for(reading.current, reading.prior, bar[1], p["better"].lower() == "higher")
             if reading.prior is None:
                 gaps.append("reading-no-history")
+    if passed["metric"] and reading is None:
+        gaps.append("never-read")
     if passed["metric"] and status != "landed" and as_of > p["by"]:
         gaps.append("date-passed")
 
@@ -300,6 +306,14 @@ class Portfolio:
     gap_counts: dict[str, int]
     complete: int
     statuses: dict[str, int]
+    judged_work: int = 0
+
+    @property
+    def judged_percent(self) -> int | None:
+        """Share of all work that sits under a bet with a complete definition of good: output that can be judged."""
+        if not self.work_total:
+            return None
+        return round(100 * self.judged_work / self.work_total)
 
     @property
     def linked_percent(self) -> int | None:
@@ -318,4 +332,5 @@ def review(bets: list[Bet], work: list[Work], as_of: str) -> Portfolio:
     complete = sum(1 for r in reviews if all(ok for c, ok in r.passed.items() if c != "linked_work"))
     statuses = {s: sum(1 for r in reviews if r.status == s) for s in ("landed", "watch", "stalled")}
     statuses["with no status word"] = sum(1 for r in reviews if r.status is None)
-    return Portfolio(reviews, lost, len(work), as_of, counts, complete, statuses)
+    judged = sum(len(r.work) for r in reviews if r.passed["metric"])
+    return Portfolio(reviews, lost, len(work), as_of, counts, complete, statuses, judged)

@@ -63,7 +63,7 @@ Add `--illustrative` only for sample data. It writes `run/review.md`, `run/revie
 
 ### 4. Show it
 
-Show the ranked table and the work linked to no bet from `review.md`, as written. Point the user to `review.html`. Lead with the top three next steps. Do not change a score, a status word or a next step.
+Show "Do these first", the ranked table and the work linked to no bet from `review.md`, as written. Point the user to `review.html`. Do not change a score, a status word or a next step.
 
 ### 5. Check any rewrite
 
@@ -88,7 +88,15 @@ It refuses a number the review did not compute, a status word other than the com
 | Decider | 1 | "Decides the next step" names someone |
 | Linked work | 1 | At least one work item links to the bet |
 
-A bet with no "Landing brief" block is flagged no-brief and fails every brief check. Rank 1 is the lowest score; at equal scores, stalled comes first and landed last.
+A bet with no "Landing brief" block is flagged no-brief and fails every brief check. A placeholder (TBD, TBC, n/a, ?, unknown, later) counts as missing. Rank 1 is the lowest score; at equal scores, stalled comes first and landed last.
+
+The score says whether a bet can be judged, not whether it is worth doing. Say so if the user reads it as a quality grade. Two signals sit beside it so a filled-in brief cannot pass for a measured one: "Metric never read" (a complete definition of good with no reading yet, no points lost), and the share of work under a bet with a definition of good.
+
+## Options
+
+- `--demo` runs the illustrative Acme fixture, so the user sees the output before preparing any file.
+- `--fail-on no-owner,no-metric` exits 2 when any bet has one of the named gaps, for CI or a scheduled job.
+- `--illustrative` stamps sample data as illustrative. Never use it on the user's real data.
 
 ## The status rule
 

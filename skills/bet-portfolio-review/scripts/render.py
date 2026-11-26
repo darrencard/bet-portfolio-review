@@ -31,6 +31,12 @@ def fmt(value: float, prefix: str = "", unit: str = "") -> str:
     return f"{prefix}{value:,.6g}{unit}"
 
 
+def linked_line(pf: Portfolio) -> str:
+    if not pf.work_total:
+        return "No work items were given."
+    return f"{pf.linked_percent}% of {pf.work_total} work items link to a bet; {pf.judged_percent}% sit under a bet with a definition of good."
+
+
 def status_text(r: Review) -> str:
     if r.status:
         return r.status
@@ -77,11 +83,15 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
     out = [f"# Bet portfolio review: {md(title)}", ""]
     if illustrative:
         out += [f"> **{ILLUSTRATIVE}**", ""]
-    linked = f"{pf.linked_percent}% of {pf.work_total} work items link to a bet." if pf.work_total else "No work items were given."
+    linked = linked_line(pf)
     out += [
         f"As of {pf.as_of}. {n} bets; {pf.complete} have a complete brief. {linked}",
         "",
         "Status words print only where a reading with a named source exists: landed, watch or stalled. A metric moving is not proof that the bet moved it.",
+        "",
+        "## Do these first",
+        "",
+        *[f"{r.rank}. **{md(r.bet.name)} ({md(r.bet.id)}):** {md(r.next_step)}" for r in pf.reviews[:3]],
         "",
         "## Ranked review",
         "",
@@ -143,6 +153,7 @@ def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[
     ]
     if pf.linked_percent is not None:
         rows.append(("Share of work linked to a bet", f"{pf.linked_percent}%", both))
+        rows.append(("Share of work under a bet with a definition of good", f"{pf.judged_percent}%", both))
     rows += [(f"Bets {k}", str(c), status_from) for k, c in pf.statuses.items()]
     return rows
 
@@ -173,7 +184,7 @@ def status_html(r: Review) -> str:
 
 def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool) -> str:
     n = len(pf.reviews)
-    linked = f"{pf.linked_percent}% of {pf.work_total} work items link to a bet." if pf.work_total else "No work items were given."
+    linked = linked_line(pf)
     parts = [
         "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
         f"<title>Bet portfolio review</title><style>{CSS}</style></head><body><main>",
@@ -182,6 +193,8 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
     if illustrative:
         parts.append(f"<div class='banner'>{h(ILLUSTRATIVE)}</div>")
     parts.append(f"<p class='muted'>As of {h(pf.as_of)}. {n} bets; {pf.complete} have a complete brief. {h(linked)}</p>")
+    firsts = "".join(f"<li><strong>{h(r.bet.name)}</strong> <span class='muted'>({h(r.bet.id)})</span>: {h(r.next_step)}</li>" for r in pf.reviews[:3])
+    parts.append(f"<h2>Do these first</h2><ol>{firsts}</ol>")
     parts.append("<h2>Ranked review</h2><div class='wrap'><table><thead><tr><th>Rank</th><th>Bet</th><th>Owner</th><th>Brief score</th>")
     parts.append("<th>Gaps</th><th>Status</th><th>Next step</th></tr></thead><tbody>")
     for r in pf.reviews:
@@ -211,6 +224,14 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
 
 
 def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative: bool) -> str:
+    import validate  # the same line-to-bet rule the check uses
+
+    lines = markdown.splitlines()
+    ids = [r.bet.id for r in pf.reviews]
+    per_bet: dict[str, set[str]] = {i: set() for i in ids}
+    for line, owner in zip(lines, validate.owners(lines, ids)):
+        if owner is not None:
+            per_bet[owner].update(NUMBER.findall(line))
     data = {
         "as_of": pf.as_of,
         "illustrative": illustrative,
@@ -232,6 +253,8 @@ def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative:
                 "cost_per_task": r.cost_per_task,
                 "linked_work": [w.id for w in r.work],
                 "next_step": r.next_step,
+                # Every number printed on this bet's lines. validate.py refuses any other on them.
+                "figures": sorted(per_bet[r.bet.id]),
             }
             for r in pf.reviews
         ],
