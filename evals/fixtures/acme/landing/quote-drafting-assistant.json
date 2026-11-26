@@ -1,0 +1,107 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "quote-drafting-assistant",
+  "illustrative": true,
+  "brief": {
+    "path": "bets.csv row 2",
+    "sha256": "b57d3365915db12386d8d609c45d8f2d77672eac207d1923d21a3a778f1a4b64"
+  },
+  "spec": {
+    "tool": "spec-auditor",
+    "as_of": "2026-10-02",
+    "gaps": [],
+    "checks_passed": {
+      "value": 9,
+      "unit": "checks of 9",
+      "source": "spec-auditor on spec.md",
+      "window": {
+        "from": "2026-10-02",
+        "to": "2026-10-02"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "evals": {
+    "tool": "eval-kit",
+    "as_of": "2026-11-24",
+    "tasks": {
+      "value": 200,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "tasks_unassisted": {
+      "value": 171,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "pass_rate": {
+      "value": 85.5,
+      "unit": "%",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "cost": {
+    "tool": "cost-budget-check",
+    "as_of": "2026-11-24",
+    "tokens_per_task": {
+      "value": 8400,
+      "unit": "tokens",
+      "source": "usage export",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "price_per_token": {
+      "value": 3e-06,
+      "unit": "USD",
+      "source": "provider price list",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "budget_tokens_per_task": {
+      "value": 9000,
+      "unit": "tokens",
+      "source": "landing brief",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "landed": {
+    "tool": "did-it-land",
+    "as_of": "2026-11-24",
+    "status": "landed",
+    "current": {
+      "value": 43,
+      "unit": "%",
+      "source": "Product analytics: quotes_sent event",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  }
+}

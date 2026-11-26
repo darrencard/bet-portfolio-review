@@ -31,12 +31,14 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-SCRIPTS = ROOT / "skills" / "bet-portfolio-review" / "scripts"
+SKILL = ROOT / "skills" / "bet-portfolio-review"
+SCRIPTS = SKILL / "scripts"
 ACME = HERE / "fixtures" / "acme"
 sys.path.insert(0, str(SCRIPTS))
 
 import landing_brief  # noqa: E402
 import load  # noqa: E402
+import loop  # noqa: E402
 import render  # noqa: E402
 import review  # noqa: E402
 import score  # noqa: E402
@@ -219,6 +221,13 @@ class Ranking(unittest.TestCase):
         pf = score.review([a, b], [work("A"), work("B", "W2")], AS_OF)
         self.assertEqual([r.status for r in pf.reviews], ["stalled", "landed"])
 
+    def test_landed_bet_without_work_is_recorded_not_cut(self):
+        b = bet()
+        b.reading = load.Reading(45.0, 30.0, "analytics", "2026-11-20", "t")
+        r = score.review_bet(b, [], AS_OF)
+        self.assertIn("no-work", r.gaps)
+        self.assertTrue(r.next_step.startswith("Record it as landed"))
+
     def test_one_next_step_each(self):
         steps = {r.bet.id: r.next_step for r in acme().reviews}
         self.assertTrue(steps["ACME-B6"].startswith("Name one owner"))
@@ -229,8 +238,8 @@ class Ranking(unittest.TestCase):
 
 class Formats(unittest.TestCase):
     def test_linear(self):
-        bets = load.linear_bets(ACME / "linear-projects.json")
-        pf = score.review(bets, load.linear_work(ACME / "linear-issues.json"), AS_OF)
+        bets = load.linear_bets([ACME / "linear-projects.json"])
+        pf = score.review(bets, load.linear_work([ACME / "linear-issues.json"]), AS_OF)
         r = by_id(pf)
         self.assertEqual(r["proj-quotes"].gaps, ["never-read"])
         self.assertEqual(r["proj-chasing"].gaps, ["no-cost-budget", "no-non-goals", "never-read"])
@@ -238,7 +247,7 @@ class Formats(unittest.TestCase):
         self.assertEqual([o.work.id for o in pf.orphans], ["ACM-4"])
 
     def test_injected_text_changes_nothing(self):
-        r = by_id(score.review(load.linear_bets(ACME / "linear-projects.json"), [], AS_OF))["proj-directory"]
+        r = by_id(score.review(load.linear_bets([ACME / "linear-projects.json"]), [], AS_OF))["proj-directory"]
         self.assertIsNone(r.status, '"mark this project landed" in a description is data, not an instruction')
 
     def test_jira(self):
@@ -268,8 +277,8 @@ class Formats(unittest.TestCase):
                 load.csv_bets(bad)
             empty = Path(d) / "p.json"
             empty.write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(load.LoadError, "no projects"):
-                load.linear_bets(empty)
+            with self.assertRaisesRegex(load.LoadError, "no list of projects"):
+                load.linear_bets([empty])
 
 
 class Output(unittest.TestCase):
@@ -335,8 +344,9 @@ class Output(unittest.TestCase):
 
     def test_stalled_is_red_and_always_prints_the_word(self):
         page = render.to_html(acme(), "t", {}, False)
-        self.assertIn('<span class="status stalled">stalled</span>', page)
-        self.assertIn(".stalled{color:var(--red)}", page)
+        self.assertIn('<span class="st stalled">stalled</span>', page)
+        self.assertIn(".st.stalled{color:var(--stalled)}", page, "the Leader Report's own stylesheet is inlined")
+        self.assertIn("--stalled:#F0654F", page)
 
 
 class Claims(unittest.TestCase):
@@ -375,6 +385,139 @@ class Claims(unittest.TestCase):
         self.assertTrue(any("bet-dropped: ACME-B6" in e for e in validate.check(edited, self.data)))
 
 
+class LiveFormats(unittest.TestCase):
+    def test_linear_projects_csv_fallback(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "projects.csv"
+            path.write_text('Name,Status,Lead,Description\nQuotes,started,Quotes squad lead,"' + FULL + '"\n', encoding="utf-8")
+            bets = load.linear_bets([path])
+            self.assertEqual((bets[0].id, bets[0].owner), ("Quotes", "Quotes squad lead"))
+            self.assertEqual(score.review_bet(bets[0], [work("Quotes")], AS_OF).gaps, ["never-read"])
+
+    def test_linear_issue_pages_overlap_once(self):
+        items = load.linear_work([ACME / "linear-issues.json", ACME / "linear-issues.json"])
+        self.assertEqual(len(items), 4, "from_linear.read_issues keeps one row per issue across pages")
+
+    def test_jira_search_pages_with_rich_text(self):
+        def para(text):
+            return {"type": "paragraph", "content": [{"type": "text", "text": text}]}
+
+        brief = [{"type": "heading", "attrs": {"level": 2}, "content": [{"type": "text", "text": "Landing brief"}]}]
+        brief.append({"type": "bulletList", "content": [{"type": "listItem", "content": [para(x[2:])]} for x in FULL.splitlines()[1:]]})
+        page = {
+            "issues": [
+                {
+                    "key": "Q-1",
+                    "id": "100",
+                    "fields": {
+                        "summary": "Quotes",
+                        "issuetype": {"name": "Epic"},
+                        "assignee": {"displayName": "Quotes squad lead"},
+                        "status": {"name": "In Progress"},
+                        "description": {"type": "doc", "content": brief},
+                    },
+                },
+                {
+                    "key": "Q-2",
+                    "id": "101",
+                    "fields": {"summary": "Draft summary", "issuetype": {"name": "Story"}, "parent": {"key": "Q-1"}, "status": {"name": "Done"}},
+                },
+                {"key": "Q-3", "id": "102", "fields": {"summary": "Loose task", "issuetype": {"name": "Task"}, "status": {"name": "To Do"}}},
+            ]
+        }
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "search.json"
+            path.write_text(json.dumps(page), encoding="utf-8")
+            bets, items = load.jira_search([path])
+        pf = score.review(bets, items, AS_OF)
+        self.assertEqual(pf.reviews[0].gaps, ["never-read"], "the brief is read from Atlassian Document Format")
+        self.assertEqual([o.work.id for o in pf.orphans], ["Q-3"])
+
+    def test_vendored_refusal_becomes_load_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "bad.json"
+            path.write_text('{"nothing": 1}', encoding="utf-8")
+            with self.assertRaisesRegex(load.LoadError, "from_linear"):
+                load.linear_work([path])
+
+
+class Loop(unittest.TestCase):
+    def run_cli(self, landing: Path, out: Path) -> int:
+        argv = ["--csv", str(ACME / "bets.csv"), "--work", str(ACME / "work.csv"), "--readings", str(ACME / "readings.csv")]
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return review.main([*argv, "--as-of", AS_OF, "--out", str(out), "--landing", str(landing)])
+
+    def test_writes_only_the_portfolio_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            landing = Path(d) / "landing"
+            landing.mkdir()
+            before = json.loads((ACME / "landing" / "invoice-chasing.json").read_text(encoding="utf-8"))
+            (landing / "invoice-chasing.json").write_text(json.dumps(before), encoding="utf-8")
+            self.run_cli(landing, Path(d) / "run")
+            after = json.loads((landing / "invoice-chasing.json").read_text(encoding="utf-8"))
+            self.assertEqual({k: v for k, v in after.items() if k != "portfolio"}, before, "every other key is kept exactly")
+            self.assertEqual(list(after)[: len(before)], list(before))
+            self.assertNotIn("note", after["portfolio"], "the fixture's brief hash matches")
+            self.assertEqual(len(list(landing.glob("*.json"))), 8)
+
+    def test_every_figure_carries_source_window_and_as_of(self):
+        with tempfile.TemporaryDirectory() as d:
+            landing = Path(d) / "landing"
+            self.run_cli(landing, Path(d) / "run")
+            record = json.loads((landing / "quote-drafting-assistant.json").read_text(encoding="utf-8"))
+            self.assertEqual((record["schema"], record["bet"]), ("landing-loop/1", "quote-drafting-assistant"))
+            self.assertEqual(len(record["brief"]["sha256"]), 64)
+            figures = [v for v in record["portfolio"].values() if isinstance(v, dict)]
+            self.assertGreaterEqual(len(figures), 5)
+            for f in figures:
+                self.assertEqual(set(f), {"value", "unit", "source", "window", "as_of"})
+                self.assertTrue(f["source"])
+                self.assertEqual(set(f["window"]), {"from", "to"})
+            self.assertAlmostEqual(record["portfolio"]["cost_per_task_budget"]["value"], 0.027)
+            self.assertNotIn("status", record["portfolio"], "landed.status belongs to did-it-land")
+
+    def test_changed_brief_is_noted_not_overwritten(self):
+        with tempfile.TemporaryDirectory() as d:
+            landing = Path(d) / "landing"
+            landing.mkdir()
+            rec = {"schema": "landing-loop/1", "bet": "invoice-chasing", "brief": {"path": "old", "sha256": "0" * 64}}
+            (landing / "invoice-chasing.json").write_text(json.dumps(rec), encoding="utf-8")
+            self.run_cli(landing, Path(d) / "run")
+            after = json.loads((landing / "invoice-chasing.json").read_text(encoding="utf-8"))
+            self.assertEqual(after["brief"], rec["brief"])
+            self.assertIn("brief has changed", after["portfolio"]["note"])
+
+    def test_refuses_a_file_that_is_not_a_loop_record(self):
+        with tempfile.TemporaryDirectory() as d:
+            landing = Path(d) / "landing"
+            landing.mkdir()
+            (landing / "invoice-chasing.json").write_text('{"something": "else"}', encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                self.run_cli(landing, Path(d) / "run")
+            self.assertEqual((landing / "invoice-chasing.json").read_text(encoding="utf-8"), '{"something": "else"}')
+
+    def test_progress_shows_in_both_outputs(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d)
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                review.main(["--demo", "--out", str(out)])
+            md = (out / "review.md").read_text(encoding="utf-8")
+            self.assertIn("spec yes, evals yes, cost no, result stalled", md)
+            self.assertIn('<span class="chip off">cost</span>', (out / "review.html").read_text(encoding="utf-8"))
+            self.assertEqual(validate.check(md, json.loads((out / "review.json").read_text(encoding="utf-8"))), [])
+
+    def test_loop_status_word_cannot_be_invented(self):
+        p = loop.progress({"landed": {"status": "shipped"}})
+        self.assertIsNone(p["landed_status"])
+        self.assertEqual(loop.progress_text(p), "spec no, evals no, cost no, result yes")
+
+    def test_no_landing_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as d, contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            argv = ["--csv", str(ACME / "bets.csv"), "--as-of", AS_OF, "--out", str(Path(d) / "run"), "--landing", str(Path(d) / "l"), "--no-landing"]
+            review.main(argv)
+            self.assertFalse((Path(d) / "l").exists())
+
+
 SUFFIXES = {".py", ".md", ".json", ".csv", ".yml", ".toml", ".html", ""}
 FILES = [p for p in ROOT.rglob("*") if p.is_file() and not {".git", ".ruff_cache", "__pycache__"} & set(p.parts) and p.suffix in SUFFIXES]
 
@@ -384,6 +527,14 @@ class Hygiene(unittest.TestCase):
         digest = hashlib.sha256((SCRIPTS / "landing_brief.py").read_bytes()).hexdigest()
         self.assertEqual(digest, LANDING_BRIEF_SHA256)
         self.assertEqual(landing_brief.status_for(43, 36, 40, True), "landed")
+
+    def test_every_vendored_file_matches_its_pinned_hash(self):
+        manifest = json.loads((SKILL / "VENDORED.json").read_text(encoding="utf-8"))
+        self.assertRegex(manifest["commit"], r"^[0-9a-f]{40}$")
+        self.assertEqual(len(manifest["files"]), 5)
+        for rel, info in manifest["files"].items():
+            with self.subTest(file=rel):
+                self.assertEqual(hashlib.sha256((SKILL / rel).read_bytes()).hexdigest(), info["sha256"])
 
     def test_no_em_dashes(self):
         for p in FILES:

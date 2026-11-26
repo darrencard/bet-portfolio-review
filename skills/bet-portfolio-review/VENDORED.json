@@ -1,0 +1,12 @@
+{
+  "note": "Copied unchanged from the Product & Technology Leader Report. Never edit these files here: update the commit, re-copy and update the hashes. evals/test_review.py checks every hash.",
+  "repository": "https://github.com/darrencard/product-engineering-update",
+  "commit": "366da9bfede540ec19e9164ad5ad17ce28c1d06b",
+  "files": {
+    "scripts/landing_brief.py": {"from": "skills/landing-brief/scripts/landing_brief.py", "sha256": "2d13573543c74ebe1bf001b97287287474a0ec298f34709a1bbfc643be051948"},
+    "scripts/from_linear.py": {"from": "skills/product-engineering-update/scripts/from_linear.py", "sha256": "0aea681e00c2ab15e37031d058ad4b81e5cea25c2da25a47dfc4138e481b922d"},
+    "scripts/from_jira.py": {"from": "skills/product-engineering-update/scripts/from_jira.py", "sha256": "060abcd89e5d237fdaf9b413b59138ab3b763ae89bb832d0bd2adfbb2fa42b77"},
+    "scripts/collect.py": {"from": "skills/product-engineering-update/scripts/collect.py", "sha256": "f58d3cd6db1fc7a5e73441618ed94460189aeb724be1c42934313d23d5bd93c4"},
+    "assets/leader-report-template.html": {"from": "skills/product-engineering-update/assets/template.html", "sha256": "e5740431ab5269606709d352d3d253325df740830e8316f06478873e71d430d0"}
+  }
+}

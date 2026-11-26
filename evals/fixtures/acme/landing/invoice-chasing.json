@@ -1,0 +1,63 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "invoice-chasing",
+  "illustrative": true,
+  "brief": {
+    "path": "bets.csv row 3",
+    "sha256": "dbad580d9c1de3bf09a9304336be67a8f412c3d1f1d761bb7df1622ea6ecb141"
+  },
+  "spec": {
+    "tool": "spec-auditor",
+    "as_of": "2026-09-20",
+    "gaps": []
+  },
+  "evals": {
+    "tool": "eval-kit",
+    "as_of": "2026-11-24",
+    "tasks": {
+      "value": 120,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "tasks_unassisted": {
+      "value": 84,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "pass_rate": {
+      "value": 70,
+      "unit": "%",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "landed": {
+    "tool": "did-it-land",
+    "as_of": "2026-11-24",
+    "status": "stalled",
+    "current": {
+      "value": 18,
+      "unit": "days",
+      "source": "Billing export: paid_at minus sent_at",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  }
+}

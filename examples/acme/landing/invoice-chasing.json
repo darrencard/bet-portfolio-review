@@ -1,0 +1,121 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "invoice-chasing",
+  "illustrative": true,
+  "brief": {
+    "path": "bets.csv row 3",
+    "sha256": "dbad580d9c1de3bf09a9304336be67a8f412c3d1f1d761bb7df1622ea6ecb141"
+  },
+  "spec": {
+    "tool": "spec-auditor",
+    "as_of": "2026-09-20",
+    "gaps": []
+  },
+  "evals": {
+    "tool": "eval-kit",
+    "as_of": "2026-11-24",
+    "tasks": {
+      "value": 120,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "tasks_unassisted": {
+      "value": 84,
+      "unit": "tasks",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    },
+    "pass_rate": {
+      "value": 70,
+      "unit": "%",
+      "source": "eval-kit traces",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "landed": {
+    "tool": "did-it-land",
+    "as_of": "2026-11-24",
+    "status": "stalled",
+    "current": {
+      "value": 18,
+      "unit": "days",
+      "source": "Billing export: paid_at minus sent_at",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
+  },
+  "portfolio": {
+    "tool": "bet-portfolio-review 0.2.0",
+    "as_of": "2026-11-26",
+    "rank": {
+      "value": 5,
+      "unit": "rank of 8 bets, 1 needs work first",
+      "source": "bets.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score": {
+      "value": 14,
+      "unit": "points of 14",
+      "source": "bets.csv row 3",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score_percent": {
+      "value": 100,
+      "unit": "%",
+      "source": "bets.csv row 3",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "linked_work": {
+      "value": 3,
+      "unit": "work items",
+      "source": "work.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "owner": "Payments squad lead",
+    "decides": "Head of Product",
+    "gaps": [],
+    "next_step": "Head of Product decides: change the approach or stop the bet.",
+    "cost_per_task_budget": {
+      "value": 0.018000000000000002,
+      "unit": "USD per task",
+      "source": "bets.csv row 3: tokens per task x price per token",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    }
+  }
+}

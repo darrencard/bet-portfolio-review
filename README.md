@@ -2,14 +2,14 @@
 
 A free Claude skill that scores every bet on your roadmap against its landing brief and ranks what to fix first.
 
-**Why it matters:** a bet with no metric, owner or cost budget cannot be called landed or stalled, and work tied to no bet is spend no one is accountable for. This review finds both, from your Linear, Jira or CSV roadmap, with one next step per bet.
+**Why it matters:** a bet with no metric, owner or cost budget cannot be called landed or stalled, and work tied to no bet is spend no one is accountable for. This review finds both, live from your Linear or Jira roadmap (a CSV when there is no connector), with one next step per bet.
 
 **How it works:** Python computes every score, count and cost per task, with a source for each. The model never does the arithmetic, and a rewrite that adds a number, changes a status word or claims cause fails the check.
 
 ## Install: paste this into Claude Code
 
 ```text
-Install the bet-portfolio-review skill from https://github.com/darrencard/bet-portfolio-review: clone it, run python3 -m unittest discover -s evals and stop if any test fails, then copy skills/bet-portfolio-review into ~/.claude/skills/. Then review my roadmap: read the Linear projects and issues already connected to this session (or ask me for a CSV or Jira export), ask me only for metric readings I have with their sources, run the review as of today, and show me the ranked table, the work linked to no bet and the top three next steps.
+Install the bet-portfolio-review skill from https://github.com/darrencard/bet-portfolio-review: clone it, run python3 -m unittest discover -s evals and stop if any test fails, then copy skills/bet-portfolio-review into ~/.claude/skills/. Then review my roadmap: read the Linear projects and issues already connected to this session (or my Jira search results through the Jira connector, or ask me for a CSV), ask me only for metric readings I have with their sources, run the review as of today, and show me the ranked table, the work linked to no bet and the top three next steps.
 ```
 
 The repository is private until review, so the clone needs `gh` signed in with access.
@@ -22,6 +22,10 @@ Do these first
 2. Trade directory listing (ACME-B6): Name one owner for this bet.
 3. Supplier price sync (ACME-B4): State the cost budget as two lines, tokens per task and price per token.
 ```
+
+## Step 1 of the Landing Loop
+
+Five skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 1, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
 
 ## What it checks
 
@@ -50,7 +54,8 @@ Because a full score is easy to game with filler, the review also shows what the
 
 ## What you get
 
-- **A ranked review** in Markdown and one self-contained HTML file. Rank 1 needs work first.
+- **A ranked review** in Markdown and one self-contained HTML page in the Leader Report's style. Rank 1 needs work first.
+- **A loop record per bet**, with every figure carrying its value, unit, source, window and date.
 - **One next step per bet**, chosen in code from its most important gap.
 - **Status words only when earned.** landed, watch or stalled prints only where a reading with a named source meets a complete definition of good. Stalled prints in red.
 - **An evidence table.** Every portfolio figure names the file it was computed from; every bet names its row or project.
@@ -66,7 +71,7 @@ Templates for the three CSVs are in `skills/bet-portfolio-review/assets/`. Linea
 
 ## Built on
 
-- The landing brief schema and status rule from the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) (`landing_brief.py`, copied unchanged from v0.11.0; a test pins its hash).
+- The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.9 or later, standard library only. MIT licensed. Version 0.1.0.
+Python 3.9 or later, standard library only. MIT licensed. Version 0.2.0.

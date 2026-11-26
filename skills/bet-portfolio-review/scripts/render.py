@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Write the review as Markdown, as one self-contained HTML file, and as JSON for the claim check.
 
+The HTML uses the Leader Report's own stylesheet and fonts, read from its vendored template
+(assets/leader-report-template.html), and follows its style guide (references/design.md in that skill): mono capital
+labels, hairline rows, colour for status only, brass where a person owes something. Markdown is the plain-text twin.
+
 Every number printed here comes from score.py. Every piece of text read from a source is escaped: in Markdown,
 pipes, angle brackets and line breaks are neutralised; in HTML, everything goes through html.escape.
 
@@ -12,10 +16,15 @@ from __future__ import annotations
 import html
 import json
 import re
+from pathlib import Path
 from typing import Any
 
 import landing_brief
+from loop import progress_text
 from score import LABELS, TOTAL, Portfolio, Review, orphan_move
+
+TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "leader-report-template.html"
+Progress = dict[str, Any]
 
 NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 ILLUSTRATIVE = "Illustrative: every figure in this review comes from an invented company's sample data."
@@ -78,14 +87,17 @@ def reading_line(r: Review) -> str:
     return f"Reading: {md(r.parts['metric'])} is {fmt(reading.current, bar[0], bar[2])}{when}{prior} ({src}; {md(reading.where)})."
 
 
-def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool) -> str:
+def loop_cell(r: Review, loop: dict[str, Progress | None] | None) -> str:
+    return progress_text(loop.get(r.bet.id)) if loop is not None else "not read"
+
+
+def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     n = len(pf.reviews)
     out = [f"# Bet portfolio review: {md(title)}", ""]
     if illustrative:
         out += [f"> **{ILLUSTRATIVE}**", ""]
-    linked = linked_line(pf)
     out += [
-        f"As of {pf.as_of}. {n} bets; {pf.complete} have a complete brief. {linked}",
+        f"As of {pf.as_of}. {n} bets; {pf.complete} have a complete brief. {linked_line(pf)}",
         "",
         "Status words print only where a reading with a named source exists: landed, watch or stalled. A metric moving is not proof that the bet moved it.",
         "",
@@ -95,15 +107,15 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         "",
         "## Ranked review",
         "",
-        "Rank 1 needs work first.",
+        "Rank 1 needs work first. Loop shows which Landing Loop steps the bet's record holds.",
         "",
-        "| Rank | Bet | Owner | Brief score | Gaps | Status | Next step |",
-        "|---|---|---|---|---|---|---|",
+        "| Rank | Bet | Owner | Brief score | Gaps | Status | Loop | Next step |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in pf.reviews:
         out.append(
             f"| {r.rank} | {md(r.bet.name)} ({md(r.bet.id)}) | {md(r.bet.owner) or 'none'} | {r.points} of {TOTAL} ({r.percent}%) "
-            f"| {gap_list(r)} | {status_text(r)} | {md(r.next_step)} |"
+            f"| {gap_list(r)} | {status_text(r)} | {loop_cell(r, loop)} | {md(r.next_step)} |"
         )
     out += ["", "## Each bet", ""]
     for r in pf.reviews:
@@ -117,11 +129,11 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
             if kind in LABELS:
                 out.append(f"  - {LABELS[kind]}: {md(note)}")
         if r.passed["metric"]:
-            direction = "higher" if p["better"].lower() == "higher" else "lower"
-            out.append(f"- Definition of good: {md(p['metric'])}, bar {md(p['bar'])}, {direction} is better, by {md(p['by'])}.")
+            out.append(f"- Definition of good: {definition(r)}.")
         out += [f"- {line}" for line in cost_lines(r)]
         out.append(f"- {reading_line(r)}")
         out.append(f"- Status: {status_text(r)}.")
+        out.append(f"- Loop: {loop_cell(r, loop)}.")
         out.append(f"- Linked work: {len(r.work)} item{'' if len(r.work) == 1 else 's'}.")
         out.append(f"- **Next step:** {md(r.next_step)}")
         out.append("")
@@ -137,6 +149,12 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         out.append(f"| {name} | {value} | {md(src)} |")
     out += ["", "Computed by scripts/review.py. The brief score weights are in scripts/score.py.", ""]
     return "\n".join(out)
+
+
+def definition(r: Review) -> str:
+    p = r.parts
+    direction = "higher" if p["better"].lower() == "higher" else "lower"
+    return f"{md(p['metric'])}, bar {md(p['bar'])}, {direction} is better, by {md(p['by'])}"
 
 
 def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
@@ -158,18 +176,38 @@ def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[
     return rows
 
 
-CSS = """
-:root{--bg:#0f1115;--fg:#e8e6e1;--muted:#9a978f;--line:#2a2d33;--card:#171a20;--red:#ff6b5e;--gold:#c9a45c}
-@media (prefers-color-scheme: light){:root{--bg:#fbfaf7;--fg:#1b1c1f;--muted:#5f5c55;--line:#dedad2;--card:#fff;--red:#c0362c;--gold:#8a6a26}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,sans-serif}
-main{max-width:1100px;margin:0 auto;padding:32px 16px}h1{font-size:26px;margin:0 0 8px}h2{font-size:18px;margin:32px 0 8px}
-.muted{color:var(--muted)}.banner{border:1px solid var(--gold);color:var(--gold);padding:8px 12px;border-radius:6px;margin:12px 0}
-.wrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{text-align:left;vertical-align:top;padding:8px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:600}.status{font-weight:700}.stalled{color:var(--red)}.none{color:var(--muted);font-weight:400}
-.bet{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin:12px 0}.bet h3{margin:0 0 6px;font-size:16px}
-.bet ul{margin:0;padding-left:18px}.next{margin-top:8px}
+# Layout for a review page, on top of the Leader Report stylesheet: no rail, sections instead of slides.
+PAGE_CSS = """
+main{margin-left:0}
+.slide{min-height:0;padding:48px 40px 36px}
+.slide.first{padding-top:56px}
+.slide h1{font-size:clamp(36px,4.6vw,60px)}
+.brand{margin-bottom:28px}
+.own .li-t{min-width:22px;display:inline-block}
+td .sh{width:56px}
+.loop{display:flex;flex-wrap:wrap;gap:4px}
+.chip.off{color:var(--t3);border-style:dashed}
+.nos{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.gp{font-size:12px;color:var(--t2)}
+.betcard h3{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.betcard .nm{font:600 18px/1.25 var(--display);color:var(--t1);margin:0 0 12px;letter-spacing:-.02em}
+.betcard .nx{margin-top:12px;color:var(--t1);font-size:13.5px}
+.betcard .nx b{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
+@media (max-width:980px){.slide{padding:32px 16px 28px}}
 """
+BRAND = (
+    '<div class="brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">'
+    '<rect x="2" y="13" width="3" height="7" fill="var(--agent)"/><rect x="7" y="10" width="3" height="10" fill="var(--agent)"/>'
+    '<rect x="12" y="2" width="1.5" height="20" fill="var(--brass)"/><rect x="16" y="4" width="4" height="16" fill="var(--t1)"/></svg>'
+    '<span translate="no">DACARD</span></div>'
+)
+
+
+def stylesheet() -> str:
+    """The Leader Report's style block (fonts and tokens included), from the vendored template."""
+    text = TEMPLATE.read_text(encoding="utf-8")
+    start, end = text.index("<style>") + len("<style>"), text.index("</style>")
+    return text[start:end]
 
 
 def h(text: Any) -> str:
@@ -177,53 +215,122 @@ def h(text: Any) -> str:
 
 
 def status_html(r: Review) -> str:
+    """The status mark from the style guide: the word always prints beside its colour. No status, no colour."""
     if r.status is None:
-        return f'<span class="status none">{h(status_text(r))}</span>'
-    return f'<span class="status {h(r.status)}">{h(r.status)}</span>'
+        return f'<span class="nos">{h(status_text(r))}</span>'
+    return f'<span class="st {h(r.status)}">{h(r.status)}</span>'
 
 
-def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool) -> str:
+def share_bar(percent: int) -> str:
+    return f'<span class="sh" aria-hidden="true"><i style="width:{max(0, min(100, percent))}%"></i></span>'
+
+
+def loop_html(r: Review, loop: dict[str, Progress | None] | None) -> str:
+    if loop is None:
+        return '<span class="nos">not read</span>'
+    p = loop.get(r.bet.id)
+    if p is None:
+        return '<span class="nos">no record</span>'
+    chips = [f'<span class="chip{"" if p[k] else " off"}">{k}</span>' for k in ("spec", "evals", "cost")]
+    if p["landed_status"]:
+        chips.append(f'<span class="st {h(p["landed_status"])}">{h(p["landed_status"])}</span>')
+    else:
+        chips.append(f'<span class="chip{"" if p["landed"] else " off"}">result</span>')
+    return f'<span class="loop">{"".join(chips)}</span>'
+
+
+def table(heads: list[str], rows: str, num: tuple[int, ...] = ()) -> str:
+    th = "".join(f"<th{' class=num' if i in num else ''}>{h(x)}</th>" for i, x in enumerate(heads))
+    return f'<div class="tablewrap"><table><thead><tr>{th}</tr></thead><tbody>{rows}</tbody></table></div>'
+
+
+def section(label: str, title: str, body: str, first: bool = False) -> str:
+    return f'<section class="slide{" first" if first else ""}"><div class="meta"><span>{h(label)}</span></div><h2>{h(title)}</h2>{body}</section>'
+
+
+def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     n = len(pf.reviews)
-    linked = linked_line(pf)
-    parts = [
-        "<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>",
-        f"<title>Bet portfolio review</title><style>{CSS}</style></head><body><main>",
-        f"<h1>Bet portfolio review: {h(title)}</h1>",
-    ]
-    if illustrative:
-        parts.append(f"<div class='banner'>{h(ILLUSTRATIVE)}</div>")
-    parts.append(f"<p class='muted'>As of {h(pf.as_of)}. {n} bets; {pf.complete} have a complete brief. {h(linked)}</p>")
-    firsts = "".join(f"<li><strong>{h(r.bet.name)}</strong> <span class='muted'>({h(r.bet.id)})</span>: {h(r.next_step)}</li>" for r in pf.reviews[:3])
-    parts.append(f"<h2>Do these first</h2><ol>{firsts}</ol>")
-    parts.append("<h2>Ranked review</h2><div class='wrap'><table><thead><tr><th>Rank</th><th>Bet</th><th>Owner</th><th>Brief score</th>")
-    parts.append("<th>Gaps</th><th>Status</th><th>Next step</th></tr></thead><tbody>")
-    for r in pf.reviews:
-        parts.append(
-            f"<tr><td>{r.rank}</td><td>{h(r.bet.name)} <span class='muted'>({h(r.bet.id)})</span></td><td>{h(r.bet.owner) or 'none'}</td>"
-            f"<td>{r.points} of {TOTAL} ({r.percent}%)</td><td>{h(gap_list(r))}</td><td>{status_html(r)}</td><td>{h(r.next_step)}</td></tr>"
-        )
-    parts.append("</tbody></table></div><h2>Each bet</h2>")
+    ill = '<span class="ill">Illustrative</span>' if illustrative else ""
+    facts = [("Bets", str(n)), ("Complete brief", str(pf.complete)), ("Work linked to no bet", str(len(pf.orphans)))]
+    if pf.linked_percent is not None:
+        facts += [("Work linked to a bet", f"{pf.linked_percent}%"), ("Work under a definition of good", f"{pf.judged_percent}%")]
+    cover = (
+        f'<section class="slide first">{BRAND}<div class="meta"><span>Bet portfolio review</span><span>As of {h(pf.as_of)}</span>{ill}</div>'
+        f"<h1>{h(title)}</h1>"
+        f'<p class="lede">{h(linked_line(pf))} Status words print only where a reading with a named source exists. '
+        "A metric moving is not proof that the bet moved it.</p>"
+        f'<div class="facts">{"".join(f"<span><b>{h(v)}</b>{h(k)}</span>" for k, v in facts)}</div>'
+        + (f'<p class="sub">{h(ILLUSTRATIVE)}</p>' if illustrative else "")
+        + "</section>"
+    )
+    firsts = "".join(
+        f'<li class="own"><span><span class="li-t">{r.rank}</span><b>{h(r.bet.name)}</b> <span class="t3">({h(r.bet.id)})</span>. {h(r.next_step)}</span>'
+        f'<span class="li-o">{h(r.bet.owner or "none")}</span><span class="nw">{status_html(r)}</span></li>'
+        for r in pf.reviews[:3]
+    )
+    do_first = section("01", "Do these first", f'<div class="card"><ul>{firsts}</ul></div>')
+    rows = "".join(
+        f'<tr><td class="num">{r.rank}</td><td>{h(r.bet.name)} <span class="t3">({h(r.bet.id)})</span></td>'
+        f'<td><span class="mo" style="color:var(--brass)">{h(r.bet.owner) or "none"}</span></td>'
+        f'<td class="nw">{share_bar(r.percent)}<span class="mo">{r.points} of {TOTAL}</span></td>'
+        f'<td class="gp">{h(gap_list(r))}</td><td>{status_html(r)}</td><td>{loop_html(r, loop)}</td><td>{h(r.next_step)}</td></tr>'
+        for r in pf.reviews
+    )
+    ranked = section(
+        "02",
+        "Ranked review",
+        '<p class="lede">Rank 1 needs work first. Loop shows which Landing Loop steps each bet\'s record holds.</p>'
+        '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Bet</th><th>Owner</th><th>Brief score</th><th>Gaps</th>'
+        f"<th>Status</th><th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
+    )
+    cards = []
     for r in pf.reviews:
         items = [f"Source: {h(r.bet.source)}", f"Gaps: {h(gap_list(r))}"]
+        if r.passed["metric"]:
+            items.append(f"Definition of good: {h(definition(r))}")
         items += [h(x.rstrip(".")) for x in cost_lines(r)]
         items.append(h(reading_line(r).rstrip(".")))
         lis = "".join(f"<li>{x}</li>" for x in items)
-        parts.append(
-            f"<section class='bet'><h3>{r.rank}. {h(r.bet.name)} <span class='muted'>({h(r.bet.id)})</span> {status_html(r)}</h3>"
-            f"<ul>{lis}</ul><p class='next'><strong>Next step:</strong> {h(r.next_step)}</p></section>"
+        cards.append(
+            f'<div class="card betcard"><h3><span>{r.rank} · {h(r.bet.id)}</span>{status_html(r)}</h3><p class="nm">{h(r.bet.name)}</p>'
+            f'<ul>{lis}</ul><p class="nx"><b>Next step</b>{h(r.next_step)}</p></div>'
         )
-    parts.append(f"<h2>Work linked to no bet</h2><p>{h(orphan_move(pf.orphans))}</p>")
-    if pf.orphans:
-        parts.append("<div class='wrap'><table><thead><tr><th>Item</th><th>Title</th><th>Why</th><th>Source</th></tr></thead><tbody>")
-        parts += [f"<tr><td>{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(o.why)}</td><td>{h(o.work.source)}</td></tr>" for o in pf.orphans]
-        parts.append("</tbody></table></div>")
-    parts.append("<h2>Evidence</h2><div class='wrap'><table><thead><tr><th>Figure</th><th>Value</th><th>Computed from</th></tr></thead><tbody>")
-    parts += [f"<tr><td>{h(a)}</td><td>{h(b)}</td><td>{h(c)}</td></tr>" for a, b, c in figures_table(pf, sources)]
-    parts.append("</tbody></table></div></main></body></html>")
-    return "\n".join(parts)
+    each = section("03", "Each bet", f'<div class="grid g2">{"".join(cards)}</div>')
+    orphan_rows = "".join(
+        f"<tr><td>{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(o.why)}</td><td class='mo'>{h(o.work.source)}</td></tr>" for o in pf.orphans
+    )
+    orphans = section(
+        "04",
+        "Work linked to no bet",
+        f'<p class="lede">{h(orphan_move(pf.orphans))}</p>' + (table(["Item", "Title", "Why", "Source"], orphan_rows) if pf.orphans else ""),
+    )
+    ev_rows = "".join(f'<tr><td>{h(a)}</td><td class="num">{h(b)}</td><td class="mo">{h(c)}</td></tr>' for a, b, c in figures_table(pf, sources))
+    evidence = section(
+        "05",
+        "Evidence",
+        table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))
+        + '<p class="asof">Computed by scripts/review.py. The brief score weights are in scripts/score.py.</p>',
+    )
+    return "\n".join(
+        [
+            "<!DOCTYPE html>",
+            '<html lang="en">',
+            '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
+            f"<title>Bet portfolio review: {h(title)}</title>",
+            f"<style>{stylesheet()}{PAGE_CSS}</style></head>",
+            "<body><main>",
+            cover,
+            do_first,
+            ranked,
+            each,
+            orphans,
+            evidence,
+            "</main></body></html>",
+        ]
+    )
 
 
-def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative: bool) -> str:
+def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     import validate  # the same line-to-bet rule the check uses
 
     lines = markdown.splitlines()
@@ -253,6 +360,7 @@ def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative:
                 "cost_per_task": r.cost_per_task,
                 "linked_work": [w.id for w in r.work],
                 "next_step": r.next_step,
+                "loop": (loop or {}).get(r.bet.id),
                 # Every number printed on this bet's lines. validate.py refuses any other on them.
                 "figures": sorted(per_bet[r.bet.id]),
             }

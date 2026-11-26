@@ -198,30 +198,121 @@ def load_json(path: Path) -> Any:
         raise LoadError(f"{path} is not valid JSON ({e.msg}, line {e.lineno}).") from None
 
 
-def linear_bets(path: Path) -> list[Bet]:
+def vendored(call, *args):
+    """Call a Leader Report reader; its refusals (SystemExit with a message) become a LoadError."""
+    try:
+        return call(*args)
+    except SystemExit as e:
+        raise LoadError(str(e)) from None
+
+
+CLOSED = ("canceled", "cancelled", "duplicate")
+
+
+def is_closed(item: dict[str, Any]) -> bool:
+    """A canceled project or issue is not on the roadmap. Completed ones stay: they are where landed is read."""
+    import from_linear
+
+    status = item.get("status") or item.get("state")
+    kind = item.get("statusType") or (status.get("type") if isinstance(status, dict) else None)
+    word = from_linear.state_of(item) if "status" in item or "state" in item else ""
+    name = status if isinstance(status, str) else (status.get("name") if isinstance(status, dict) else "")
+    return any(str(x or "").lower() in CLOSED for x in (kind, word, name))
+
+
+def linear_bets(paths: list[Path], include_closed: bool = False) -> list[Bet]:
+    """Bets from Linear projects: the connector's or API's JSON pages, or Linear's projects CSV export.
+    Read with the Leader Report's from_linear.py, so both skills see a project the same way."""
+    import from_linear
+
+    projects: list[dict[str, Any]] = []
+    where: list[str] = []
+    for path in paths:
+        found = (
+            vendored(from_linear.read_projects_csv, path)
+            if path.suffix.lower() == ".csv"
+            else vendored(from_linear.read_items, [path], ("projects",), "projects")
+        )
+        projects += found
+        where += [path.name] * len(found)
     bets = []
-    for project in nodes(load_json(path), "projects", "project"):
-        pid = clean(project.get("id") or project.get("slugId"))
+    for project, src in zip(projects, where):
+        if not include_closed and is_closed(project):
+            continue
+        pid = clean(project.get("id") or project.get("slugId") or project.get("name"))
         name = clean(project.get("name")) or pid
         texts = [clean(project.get(k)) for k in ("content", "description") if isinstance(project.get(k), str)]
         text = next((t for t in texts if has_heading(t)), texts[0] if texts else "")
-        bet = Bet(id=pid, name=name, owner=person(project.get("lead")), description=text, source=f"{path.name} project {pid}")
+        bet = Bet(id=pid, name=name, owner=clean(from_linear.name_of(project.get("lead"))), description=text, source=f"{src} project {pid}")
         bet.aliases = {a.lower() for a in (pid, name, clean(project.get("slugId"))) if a}
         bets.append(bet)
     if not bets:
-        raise LoadError(f"{path} holds no projects. Save the JSON from the Linear connector's list_projects as it stands.")
+        raise LoadError(f"{', '.join(p.name for p in paths)} hold no projects. Save the Linear connector's list_projects result as it stands.")
     check_unique(bets)
     return bets
 
 
-def linear_work(path: Path) -> list[Work]:
+def linear_work(paths: list[Path], include_closed: bool = False) -> list[Work]:
+    """Issues from the connector's or API's JSON pages (overlapping pages are read once), via from_linear.py."""
+    import from_linear
+
     out = []
-    for issue in nodes(load_json(path), "issues", "issue"):
+    for issue in vendored(from_linear.read_issues, paths):
+        if not include_closed and is_closed(issue):
+            continue
         iid = clean(issue.get("identifier") or issue.get("id"))
         project = issue.get("project")
         ref = clean(project.get("id") or project.get("name")) if isinstance(project, dict) else clean(project or issue.get("projectId"))
-        out.append(Work(id=iid, title=clean(issue.get("title")), bet=ref, source=f"{path.name} issue {iid}"))
+        out.append(Work(id=iid, title=clean(issue.get("title")), bet=ref, source=f"Linear issue {iid}"))
     return out
+
+
+def adf_text(value: Any) -> str:
+    """Plain text from a Jira field: a string, or Atlassian Document Format (Jira Cloud's REST v3 description)."""
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, dict):
+        return ""
+    if value.get("type") == "text":
+        return str(value.get("text", ""))
+    parts = [adf_text(c) for c in value.get("content") or []]
+    joiner = "\n" if value.get("type") in ("doc", "bulletList", "orderedList") else ""
+    text = joiner.join(parts)
+    if value.get("type") == "heading":
+        text = "#" * int((value.get("attrs") or {}).get("level", 2)) + " " + text
+    if value.get("type") == "listItem":
+        text = "- " + text
+    return text
+
+
+def jira_search(paths: list[Path], bet_type: str = "Epic") -> tuple[list[Bet], list[Work]]:
+    """Bets and work from Jira REST search pages (the Jira connector or /rest/api/3/search), saved as they stand.
+    Issue fields come through the Leader Report's from_jira.py; description and parent, which it does not need,
+    are read from the same pages here."""
+    import from_jira
+
+    issues = vendored(from_jira.from_search, paths, "customfield_10016")
+    extra: dict[str, tuple[str, str, str]] = {}
+    for path in paths:
+        for raw in (load_json(path) or {}).get("issues") or []:
+            f = raw.get("fields") or {}
+            parent = f.get("parent") or {}
+            ref = clean(parent.get("key") if isinstance(parent, dict) else parent) or clean(f.get("customfield_10014"))
+            extra[clean(raw.get("key"))] = (adf_text(f.get("description")), ref, clean(raw.get("id")))
+    bets, work = [], []
+    for issue in issues:
+        key = clean(issue["key"])
+        description, parent, iid = extra.get(key, ("", "", ""))
+        if issue["issuetype"].lower() == bet_type.lower():
+            bet = Bet(id=key, name=clean(issue["summary"]) or key, owner=clean(issue["assignee"]), description=description, source=f"Jira {key}")
+            bet.aliases = {a.lower() for a in (key, iid) if a}
+            bets.append(bet)
+        else:
+            work.append(Work(id=key, title=clean(issue["summary"]), bet=parent, source=f"Jira {key}"))
+    if not bets:
+        raise LoadError(f"the Jira pages hold no issues of type {bet_type}. Pass --jira-bet-type with the type your bets use.")
+    check_unique(bets)
+    return bets, work
 
 
 JIRA_PARENT = ("parent", "parent_key", "parent_id", "custom_field_(epic_link)", "epic_link")

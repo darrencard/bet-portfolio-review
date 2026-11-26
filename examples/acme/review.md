@@ -14,18 +14,18 @@ Status words print only where a reading with a named source exists: landed, watc
 
 ## Ranked review
 
-Rank 1 needs work first.
+Rank 1 needs work first. Loop shows which Landing Loop steps the bet's record holds.
 
-| Rank | Bet | Owner | Brief score | Gaps | Status | Next step |
-|---|---|---|---|---|---|---|
-| 1 | Payments onboarding revamp (ACME-B5) | Payments squad lead | 4 of 14 (29%) | No landing brief | no reading | Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line. |
-| 2 | Trade directory listing (ACME-B6) | none | 8 of 14 (57%) | No owner; No definition of good | no reading | Name one owner for this bet. |
-| 3 | Supplier price sync (ACME-B4) | Catalogue squad lead | 10 of 14 (71%) | No cost budget; No non-goals; Metric never read | no reading | State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code. |
-| 4 | Crew scheduling (ACME-B7) | Field squad lead | 13 of 14 (93%) | No work linked; Date passed without landing; Metric never read | no reading | Link the work that delivers this bet, or cut the bet. |
-| 5 | Invoice chasing (ACME-B2) | Payments squad lead | 14 of 14 (100%) | None | stalled | Head of Product decides: change the approach or stop the bet. |
-| 6 | Owner reporting dashboards (ACME-B8) | Insights squad lead | 14 of 14 (100%) | Reading has no source | no status word: the reading has no source | Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word. |
-| 7 | Mobile job sheets (ACME-B3) | Field squad lead | 14 of 14 (100%) | Reading has no prior value | watch | Take the next reading of Job sheets completed on mobile before 2027-01-31. |
-| 8 | Quote drafting assistant (ACME-B1) | Quotes squad lead | 14 of 14 (100%) | None | landed | Record it as landed. Head of Product decides what comes next. |
+| Rank | Bet | Owner | Brief score | Gaps | Status | Loop | Next step |
+|---|---|---|---|---|---|---|---|
+| 1 | Payments onboarding revamp (ACME-B5) | Payments squad lead | 4 of 14 (29%) | No landing brief | no reading | no loop record | Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line. |
+| 2 | Trade directory listing (ACME-B6) | none | 8 of 14 (57%) | No owner; No definition of good | no reading | no loop record | Name one owner for this bet. |
+| 3 | Supplier price sync (ACME-B4) | Catalogue squad lead | 10 of 14 (71%) | No cost budget; No non-goals; Metric never read | no reading | no loop record | State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code. |
+| 4 | Crew scheduling (ACME-B7) | Field squad lead | 13 of 14 (93%) | No work linked; Date passed without landing; Metric never read | no reading | no loop record | Link the work that delivers this bet, or cut the bet. |
+| 5 | Invoice chasing (ACME-B2) | Payments squad lead | 14 of 14 (100%) | None | stalled | spec yes, evals yes, cost no, result stalled | Head of Product decides: change the approach or stop the bet. |
+| 6 | Owner reporting dashboards (ACME-B8) | Insights squad lead | 14 of 14 (100%) | Reading has no source | no status word: the reading has no source | no loop record | Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word. |
+| 7 | Mobile job sheets (ACME-B3) | Field squad lead | 14 of 14 (100%) | Reading has no prior value | watch | spec yes, evals no, cost no, result no | Take the next reading of Job sheets completed on mobile before 2027-01-31. |
+| 8 | Quote drafting assistant (ACME-B1) | Quotes squad lead | 14 of 14 (100%) | None | landed | spec yes, evals yes, cost yes, result landed | Record it as landed. Head of Product decides what comes next. |
 
 ## Each bet
 
@@ -38,6 +38,7 @@ Rank 1 needs work first.
 - Cost budget: missing.
 - Reading: none recorded.
 - Status: no reading.
+- Loop: no loop record.
 - Linked work: 2 items.
 - **Next step:** Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
 
@@ -52,6 +53,7 @@ Rank 1 needs work first.
 - Price per token: none (the line is fixed code).
 - Reading: none recorded.
 - Status: no reading.
+- Loop: no loop record.
 - Linked work: 1 item.
 - **Next step:** Name one owner for this bet.
 
@@ -66,6 +68,7 @@ Rank 1 needs work first.
 - Cost budget: missing.
 - Reading: none recorded.
 - Status: no reading.
+- Loop: no loop record.
 - Linked work: 2 items.
 - **Next step:** State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code.
 
@@ -80,6 +83,7 @@ Rank 1 needs work first.
 - Price per token: none (the line is fixed code).
 - Reading: none recorded.
 - Status: no reading.
+- Loop: no loop record.
 - Linked work: 0 items.
 - **Next step:** Link the work that delivers this bet, or cut the bet.
 
@@ -95,6 +99,7 @@ Rank 1 needs work first.
 - Cost per task, computed: $0.018.
 - Reading: Median days to paid is 18 on 2026-11-24; prior 17 (source: Billing export: paid_at minus sent_at; readings.csv row 3).
 - Status: stalled.
+- Loop: spec yes, evals yes, cost no, result stalled.
 - Linked work: 3 items.
 - **Next step:** Head of Product decides: change the approach or stop the bet.
 
@@ -110,6 +115,7 @@ Rank 1 needs work first.
 - Cost per task, computed: $0.012.
 - Reading: Weekly active owners viewing reports is 31% on 2026-11-24; prior 28% (no source named; readings.csv row 5).
 - Status: no status word: the reading has no source.
+- Loop: no loop record.
 - Linked work: 2 items.
 - **Next step:** Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word.
 
@@ -124,6 +130,7 @@ Rank 1 needs work first.
 - Price per token: none (the line is fixed code).
 - Reading: Job sheets completed on mobile is 22% on 2026-11-24; no prior reading (source: Product analytics: job_sheet_completed event; readings.csv row 4).
 - Status: watch.
+- Loop: spec yes, evals no, cost no, result no.
 - Linked work: 3 items.
 - **Next step:** Take the next reading of Job sheets completed on mobile before 2027-01-31.
 
@@ -139,6 +146,7 @@ Rank 1 needs work first.
 - Cost per task, computed: $0.027.
 - Reading: Quotes sent within 24 hours is 43% on 2026-11-24; prior 36% (source: Product analytics: quotes_sent event; readings.csv row 2).
 - Status: landed.
+- Loop: spec yes, evals yes, cost yes, result landed.
 - Linked work: 3 items.
 - **Next step:** Record it as landed. Head of Product decides what comes next.
 

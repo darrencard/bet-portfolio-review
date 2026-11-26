@@ -1,0 +1,16 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "mobile-job-sheets",
+  "illustrative": true,
+  "brief": {
+    "path": "bets.csv row 4",
+    "sha256": "0949a494eee7198d5e6b0623a3be4e0e4e36631c93894d154baf06cea8a43718"
+  },
+  "spec": {
+    "tool": "spec-auditor",
+    "as_of": "2026-10-15",
+    "gaps": [
+      "no rollback plan"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "trade-directory-listing",
+  "brief": {
+    "path": "bets.csv row 7",
+    "sha256": "cde92b5ef262452055442e304d278e111a2573c60d21e86fafebcd1849e1df85"
+  },
+  "portfolio": {
+    "tool": "bet-portfolio-review 0.2.0",
+    "as_of": "2026-11-26",
+    "rank": {
+      "value": 2,
+      "unit": "rank of 8 bets, 1 needs work first",
+      "source": "bets.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score": {
+      "value": 8,
+      "unit": "points of 14",
+      "source": "bets.csv row 7",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score_percent": {
+      "value": 57,
+      "unit": "%",
+      "source": "bets.csv row 7",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "linked_work": {
+      "value": 1,
+      "unit": "work items",
+      "source": "work.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "owner": "",
+    "decides": "Head of Growth",
+    "gaps": [
+      "no-owner",
+      "no-metric"
+    ],
+    "next_step": "Name one owner for this bet."
+  }
+}

@@ -62,7 +62,9 @@ def check(text: str, computed: dict) -> list[str]:
             errors.append(f"bet-dropped: {bet['id']} is in the computed review but not in this one.")
         for i, x in mentions:
             words = {w.lower() for w in STATUS.findall(x)}
-            wrong = words - ({bet["status"]} if bet["status"] else set())
+            # The bet's own status, and the status did-it-land wrote into its loop record, are the only words allowed.
+            earned = {bet["status"], (bet.get("loop") or {}).get("landed_status")} - {None}
+            wrong = words - earned
             if wrong:
                 want = bet["status"] or "no status word (no reading with a source)"
                 errors.append(f"line {i}: status-changed: {bet['id']} shows {', '.join(sorted(wrong))}; computed: {want}.")

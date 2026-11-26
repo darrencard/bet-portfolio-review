@@ -83,6 +83,7 @@
         "ACME-141"
       ],
       "next_step": "Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.",
+      "loop": null,
       "figures": [
         "1",
         "14",
@@ -111,6 +112,7 @@
         "ACME-150"
       ],
       "next_step": "Name one owner for this bet.",
+      "loop": null,
       "figures": [
         "1",
         "14",
@@ -141,6 +143,7 @@
         "ACME-131"
       ],
       "next_step": "State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code.",
+      "loop": null,
       "figures": [
         "02",
         "10",
@@ -172,6 +175,7 @@
       "cost_per_task": null,
       "linked_work": [],
       "next_step": "Link the work that delivers this bet, or cut the bet.",
+      "loop": null,
       "figures": [
         "0",
         "10",
@@ -203,6 +207,13 @@
         "ACME-112"
       ],
       "next_step": "Head of Product decides: change the approach or stop the bet.",
+      "loop": {
+        "spec": true,
+        "evals": true,
+        "cost": false,
+        "landed": true,
+        "landed_status": "stalled"
+      },
       "figures": [
         "0.000003",
         "0.018",
@@ -240,6 +251,7 @@
         "ACME-171"
       ],
       "next_step": "Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word.",
+      "loop": null,
       "figures": [
         "0.000003",
         "0.012",
@@ -281,6 +293,13 @@
         "ACME-122"
       ],
       "next_step": "Take the next reading of Job sheets completed on mobile before 2027-01-31.",
+      "loop": {
+        "spec": true,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
       "figures": [
         "01",
         "100",
@@ -314,6 +333,13 @@
         "ACME-103"
       ],
       "next_step": "Record it as landed. Head of Product decides what comes next.",
+      "loop": {
+        "spec": true,
+        "evals": true,
+        "cost": true,
+        "landed": true,
+        "landed_status": "landed"
+      },
       "figures": [
         "0.000003",
         "0.027",

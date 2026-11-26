@@ -241,6 +241,8 @@ def next_step(r: Review) -> str:
         "reading-no-source": f"Name the source of the {metric} reading. Until then it earns no status word.",
     }
     for gap in r.gaps:
+        if gap == "no-work" and r.status == "landed":
+            continue  # a bet that has landed is recorded, not cut for want of linked work
         if gap in steps:
             return steps[gap]
     if "date-passed" in r.gaps:

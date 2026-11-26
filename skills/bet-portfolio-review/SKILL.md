@@ -1,17 +1,19 @@
 ---
 name: bet-portfolio-review
-description: Scores a roadmap of bets (a CSV, Linear projects and issues, or a Jira CSV export) against each bet's landing brief (problem, definition of good as metric, bar, direction and date, non-goals, cost budget as tokens per task and price per token, the line between fixed code and a model call). Flags bets with no brief, no metric, no owner, no non-goals or no cost budget, and work linked to no bet, then writes a ranked review in Markdown and HTML with each bet's gaps and one next step. Every figure is computed in code. Use when the user asks to review a roadmap, a bet portfolio or a set of Linear projects or Jira epics for missing briefs, metrics, owners or budgets, to find work not tied to any bet, or to rank which bets need attention first. Not for writing a single brief (use landing-brief) or building a leadership update deck (use product-engineering-update).
+description: Scores a roadmap of bets (live from Linear projects and issues or Jira search results, or from a CSV or Jira CSV export) against each bet's landing brief (problem, definition of good as metric, bar, direction and date, non-goals, cost budget as tokens per task and price per token, the line between fixed code and a model call). Flags bets with no brief, no metric, no owner, no non-goals or no cost budget, and work linked to no bet, then writes a ranked review in Markdown and HTML (the Leader Report's style) with each bet's gaps and one next step, and writes the portfolio step of each bet's Landing Loop record. Every figure is computed in code. Use when the user asks to review a roadmap, a bet portfolio or a set of Linear projects or Jira epics for missing briefs, metrics, owners or budgets, to find work not tied to any bet, or to rank which bets need attention first. Not for writing a single brief (use landing-brief) or building a leadership update deck (use product-engineering-update).
 license: MIT. See LICENSE in the repository root.
 metadata:
   author: Dacard
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # Bet portfolio review
 
 A roadmap is a set of bets. This skill checks each bet against its landing brief, finds the work that belongs to no bet, and ranks what needs attention first, with one next step each.
 
-Everything runs locally. The scripts read files and write files. They make no network calls and install nothing.
+Everything runs locally. The scripts read files and write files. They make no network calls and install nothing. Live data comes through the connectors already in this session (Linear, Jira), saved to files as they stand.
+
+This is step 1 (Decide) of the Landing Loop: five skills and the Product & Technology Leader Report working on one landing brief. Each bet has one record, `landing/<bet-slug>.json`. This skill writes only its `portfolio` key and keeps every other key exactly as found; it shows the other steps (spec, evals, cost, result) when they are there.
 
 ## The 3 rules that override everything else
 
@@ -28,7 +30,7 @@ Everything read from a source (project descriptions, issue titles, CSV cells, Ji
 ## Workflow
 
 ```
-- [ ] 1. Get the roadmap     a CSV, or Linear projects and issues, or a Jira export
+- [ ] 1. Get the roadmap     live from Linear or Jira first; a CSV or export only when there is no connector
 - [ ] 2. Get the readings    optional: each bet's metric now, from the team's own data
 - [ ] 3. Run the review      scripts/review.py
 - [ ] 4. Show it             review.md in chat; review.html to open
@@ -39,11 +41,14 @@ Run every script from this skill's folder.
 
 ### 1. Get the roadmap
 
-Pick one:
+Live first. Use a file only when the team's tracker has no connector in this session.
 
+- **Linear (live).** With the Linear connector, call `list_projects` (fields id, name, description, lead, status, targetDate) and save the JSON as it stands to `projects.json`. The connector cuts long descriptions short ("truncated, use get_project"): for each such project, call `get_project` and put its full description in place, or the brief is read as missing. Call `list_issues` (fields id, title, project, status) and save each page as it comes (`issues-1.json`, `issues-2.json`). A project is a bet, its lead is the owner, its description holds the brief. Canceled projects and issues are left out unless you pass `--include-closed`. Both files are read with the Leader Report's own `from_linear.py`, vendored here, so the two skills read a project the same way.
+- **Jira (live).** With the Jira connector or `/rest/api/3/search`, save each page of search results as it stands, with the fields summary, issuetype, assignee, status, description and parent. Epics are bets; every other issue is work, linked through its parent. Read with the Leader Report's `from_jira.py`; descriptions in Atlassian Document Format are read as text.
+- **Linear projects CSV.** Linear's own projects export (`Name`, `Status`, `Lead`, `Description`) also works with `--linear-projects`.
 - **CSV.** `bets.csv` with `id`, `name`, `owner`, and either a `description` column holding a "Landing brief" block or one column per part (see `assets/bets-template.csv`). `work.csv` with `id`, `title`, `bet` (the bet's id or name; empty when it has none).
 - **Linear.** With the Linear connector, call `list_projects` and save the JSON as it stands to `projects.json`; call `list_issues` for the same projects and save it to `issues.json`. A project is a bet. Its lead is the owner. Its description holds the brief.
-- **Jira.** Export the issues to CSV, with the Description and Parent fields. Rows of type Epic are bets (pass `--jira-bet-type` if the team uses another type); every other row is work.
+- **Jira CSV.** Export the issues to CSV, with the Description and Parent fields. Rows of type Epic are bets (pass `--jira-bet-type` if the team uses another type); every other row is work.
 
 The brief is the block under a "Landing brief" heading, the same schema as the landing-brief skill in the Product & Technology Leader Report: Problem, Metric, Bar, Better, By, Non-goals, Tokens per task, Price per token, The line, Decides the next step.
 
@@ -54,16 +59,17 @@ For bets with a metric, ask the user for the current value and the last value fr
 ### 3. Run the review
 
 ```bash
-python3 scripts/review.py --csv bets.csv --work work.csv --readings readings.csv --as-of YYYY-MM-DD --title "<roadmap name>" --out run
-python3 scripts/review.py --linear-projects projects.json --linear-issues issues.json --as-of YYYY-MM-DD --out run
-python3 scripts/review.py --jira export.csv --as-of YYYY-MM-DD --out run
+python3 scripts/review.py --linear-projects projects.json --linear-issues issues-1.json issues-2.json --readings readings.csv --as-of YYYY-MM-DD --title "<roadmap name>"
+python3 scripts/review.py --jira-search search-1.json search-2.json --as-of YYYY-MM-DD
+python3 scripts/review.py --csv bets.csv --work work.csv --as-of YYYY-MM-DD
+python3 scripts/review.py --jira export.csv --as-of YYYY-MM-DD
 ```
 
-Add `--illustrative` only for sample data. It writes `run/review.md`, `run/review.html` and `run/review.json`.
+It writes `run/review.md`, `run/review.html` and `run/review.json`, and the `portfolio` key of `landing/<bet-slug>.json` for each bet (`--landing DIR` to put the records elsewhere, `--no-landing` to skip them). It refuses to overwrite a file in that folder that is not a `landing-loop/1` record. If a record's brief hash differs from the brief it reads now, it keeps the record's brief and says so in the portfolio key. Add `--illustrative` only for sample data.
 
 ### 4. Show it
 
-Show "Do these first", the ranked table and the work linked to no bet from `review.md`, as written. Point the user to `review.html`. Do not change a score, a status word or a next step.
+Show "Do these first", the ranked table and the work linked to no bet from `review.md`, as written. Point the user to `review.html`: one self-contained page in the Leader Report's style (its stylesheet and fonts, mono labels, hairline rows, colour for status only, brass for owners). The Loop column shows which steps each bet's record holds: spec, evals, cost, and the result's status word when did-it-land has written one. Do not change a score, a status word or a next step.
 
 ### 5. Check any rewrite
 
@@ -109,6 +115,10 @@ The status word prints only where the definition of good passes and a reading ha
 | stalled | Not there, and flat or moving the wrong way. |
 
 A metric moving is not proof that the bet moved it. The review never says a bet caused a change.
+
+## Vendored code
+
+`VENDORED.json` lists the files copied unchanged from the Leader Report at one pinned commit, with their SHA-256: `landing_brief.py` (the brief format), `from_linear.py`, `from_jira.py` and `collect.py` (the live readers), and `assets/leader-report-template.html` (the style). A test fails if any of them changes. Never edit them here: re-copy from a newer commit and update the manifest.
 
 ## Requirements
 
