@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Read and write the Landing Loop record: one JSON file per bet, landing/<bet-slug>.json.
 
-The contract (dacard-os plans/landing-loop-contract-2026-11.md, schema "landing-loop/1"):
+The contract (darrencard/landing-loop CONTRACT.md, schema "landing-loop/1"):
   - each skill writes only its own key; this one writes `portfolio` and keeps every other key exactly as found
   - every figure carries value, unit, source, window (from, to) and as_of
   - status words are landed, watch or stalled only; `landed.status` belongs to did-it-land, never to this skill
