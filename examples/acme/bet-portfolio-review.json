@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-11-26",
+  "as_of": "2026-07-27",
   "illustrative": true,
   "sources": {
     "bets": "bets.csv",
@@ -54,7 +54,7 @@
     "no-brief": 1,
     "brief-problems": 0,
     "no-work": 1,
-    "date-passed": 2,
+    "date-passed": 0,
     "no-result": 7
   },
   "bets": [
@@ -176,7 +176,6 @@
       "points": 14,
       "percent": 100,
       "gaps": [
-        "date-passed",
         "no-result"
       ],
       "status": null,
@@ -187,7 +186,7 @@
         "QD-103",
         "QD-104"
       ],
-      "next_step": "The date, 2026-11-15, has passed with no result yet. Run did-it-land on Quote draft acceptance rate; then Head of Product, Quoting squad decides what comes next.",
+      "next_step": "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts.",
       "loop": {
         "spec": false,
         "evals": false,
@@ -196,12 +195,12 @@
         "landed_status": null
       },
       "figures": [
+        "02",
         "1",
         "100",
         "11",
         "14",
         "15",
-        "15,",
         "2026",
         "4",
         "40"
@@ -209,46 +208,6 @@
     },
     {
       "rank": 5,
-      "id": "ACME-6",
-      "name": "Job scheduler",
-      "owner": "Field squad lead",
-      "source": "briefs/job-scheduler.md",
-      "points": 14,
-      "percent": 100,
-      "gaps": [
-        "date-passed",
-        "no-result"
-      ],
-      "status": null,
-      "brief_problems": [],
-      "linked_work": [
-        "JS-601",
-        "JS-602"
-      ],
-      "next_step": "The date, 2026-10-31, has passed with no result yet. Run did-it-land on Weekly active schedulers; then Head of Product, Field squad decides what comes next.",
-      "loop": {
-        "spec": false,
-        "evals": false,
-        "cost": false,
-        "landed": false,
-        "landed_status": null
-      },
-      "figures": [
-        "10",
-        "100",
-        "14",
-        "2",
-        "2026",
-        "3,000",
-        "3,000,",
-        "31",
-        "31,",
-        "5",
-        "6"
-      ]
-    },
-    {
-      "rank": 6,
       "id": "ACME-2",
       "name": "Invoice chasing",
       "owner": "Payments squad lead",
@@ -265,7 +224,7 @@
         "IC-202",
         "IC-203"
       ],
-      "next_step": "Run did-it-land on Days sales outstanding once it has a reading from its source.",
+      "next_step": "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts.",
       "loop": {
         "spec": false,
         "evals": false,
@@ -274,6 +233,7 @@
         "landed_status": null
       },
       "figures": [
+        "02",
         "100",
         "12",
         "14",
@@ -283,11 +243,11 @@
         "30",
         "30,",
         "31",
-        "6"
+        "5"
       ]
     },
     {
-      "rank": 7,
+      "rank": 6,
       "id": "ACME-3",
       "name": "Automatic reminders",
       "owner": "Payments squad lead",
@@ -303,7 +263,7 @@
         "AR-301",
         "AR-302"
       ],
-      "next_step": "Run did-it-land on Reminders sent per week once it has a reading from its source.",
+      "next_step": "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts.",
       "loop": {
         "spec": false,
         "evals": false,
@@ -312,6 +272,7 @@
         "landed_status": null
       },
       "figures": [
+        "02",
         "100",
         "11",
         "14",
@@ -321,11 +282,11 @@
         "2026",
         "3",
         "30",
-        "7"
+        "6"
       ]
     },
     {
-      "rank": 8,
+      "rank": 7,
       "id": "ACME-4",
       "name": "Payment links",
       "owner": "Payments squad lead",
@@ -341,7 +302,7 @@
         "PL-401",
         "PL-402"
       ],
-      "next_step": "Run did-it-land on Payment link conversion once it has a reading from its source.",
+      "next_step": "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts.",
       "loop": {
         "spec": false,
         "evals": false,
@@ -350,6 +311,7 @@
         "landed_status": null
       },
       "figures": [
+        "02",
         "100",
         "11",
         "14",
@@ -358,6 +320,45 @@
         "2026",
         "30",
         "4",
+        "7"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "ACME-6",
+      "name": "Job scheduler",
+      "owner": "Field squad lead",
+      "source": "briefs/job-scheduler.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "JS-601",
+        "JS-602"
+      ],
+      "next_step": "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "02",
+        "10",
+        "100",
+        "14",
+        "2",
+        "2026",
+        "3,000",
+        "3,000,",
+        "31",
+        "6",
         "8"
       ]
     }
@@ -381,6 +382,8 @@
   ],
   "figures": [
     "0",
+    "02",
+    "07",
     "1",
     "10",
     "100",
@@ -389,7 +392,6 @@
     "13",
     "14",
     "15",
-    "15,",
     "17",
     "18",
     "19",
@@ -397,7 +399,7 @@
     "20,000",
     "20,000,",
     "2026",
-    "26",
+    "27",
     "29",
     "3",
     "3,000",
@@ -405,7 +407,6 @@
     "30",
     "30,",
     "31",
-    "31,",
     "4",
     "40",
     "5",

@@ -13,7 +13,7 @@ A roadmap is a set of bets. This skill checks each bet against its landing brief
 
 Everything runs locally. The scripts read files and write files. They make no network calls and install nothing. Live data comes through the connectors already in this session (Linear, Jira), saved to files as they stand.
 
-This is step 1 (Decide) of the Landing Loop: five skills and the Product & Technology Leader Report working on one landing brief. Each bet has one record, `landing/<bet-slug>.json`. This skill writes only its `portfolio` key and keeps every other key exactly as found; it shows the other steps (spec, evals, cost, result) when they are there.
+This is step 01 (Decide) of the Landing Loop: five skills and the Product & Technology Leader Report working on one landing brief. Each bet has one record, `landing/<bet-slug>.json`. This skill writes only its `portfolio` key and keeps every other key exactly as found; it shows the other steps (spec, evals, cost, result) when they are there.
 
 ## The 3 rules that override everything else
 

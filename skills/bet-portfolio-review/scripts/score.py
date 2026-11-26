@@ -121,6 +121,8 @@ def next_step(r: Review) -> str:
         return f"The date, {b.by}, has passed with no result yet. Run did-it-land on {b.metric}; then {who} decides what comes next."
     if "date-passed" in r.gaps:
         return f"The date, {b.by}, has passed. {who} decides: extend the date, change the approach or stop."
+    if r.status is None and "spec" not in (r.record or {}):
+        return "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts."
     if r.status is None:
         return f"Run did-it-land on {b.metric} once it has a reading from its source."
     if r.status == "landed":

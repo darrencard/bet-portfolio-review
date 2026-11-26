@@ -8,6 +8,8 @@
 - The HTML adds a scorecard in the Leader Report's style: each bet's definition of good in mono, with the result word from did-it-land. The ranked table leaves the result to the scorecard and no longer wraps at desktop width.
 - A bet whose date has passed with no result is told to run did-it-land first, not to extend or stop.
 - A bet with no loop record yet reads the same as an empty record, so a rerun prints the same page.
+- The sample is dated 2026-07-27, the Decide step, so it comes before spec-auditor's audit (2026-08-03) and claims no later result.
+- A bet with a parsed brief, no result and no `spec` key is told to run spec-auditor next (02 Spec), not did-it-land.
 
 ## 0.2.1 (2026-11-26)
 

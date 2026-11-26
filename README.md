@@ -25,17 +25,17 @@ Do these first
 
 ## Sample
 
-`examples/acme/` holds the canonical Acme landing briefs shared by every Landing Loop skill (copied unchanged into `briefs/`), a roadmap (`bets.csv`) and its work (`work.csv`). The bet followed end to end is `quote-drafting`. This one command, run from the repository root, regenerates the sample page, its Markdown and JSON twins, and the `portfolio` key of `examples/acme/landing/quote-drafting.json` (and the other bets' records):
+`examples/acme/` holds the canonical Acme landing briefs shared by every Landing Loop skill (copied unchanged into `briefs/`), a roadmap (`bets.csv`) and its work (`work.csv`). The bet followed end to end is `quote-drafting`. The review is dated 2026-07-27: it is the Decide step, so it runs before the spec audit (2026-08-03) and holds no spec, evals, cost or result yet. This one command, run from the repository root, regenerates the sample page, its Markdown and JSON twins, and the `portfolio` key of `examples/acme/landing/quote-drafting.json` (and the other bets' records):
 
 ```bash
-python3 skills/bet-portfolio-review/scripts/review.py --csv examples/acme/bets.csv --work examples/acme/work.csv --as-of 2026-11-26 --title "Acme roadmap" --illustrative --out examples/acme --stem bet-portfolio-review --landing examples/acme/landing
+python3 skills/bet-portfolio-review/scripts/review.py --csv examples/acme/bets.csv --work examples/acme/work.csv --as-of 2026-07-27 --title "Acme roadmap" --illustrative --out examples/acme --stem bet-portfolio-review --landing examples/acme/landing
 ```
 
 A test runs that exact line on a fresh copy and checks the output matches the committed files byte for byte. Running it twice changes nothing.
 
-## Step 1 of the Landing Loop
+## Step 01 of the Landing Loop: Decide
 
-Five skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 1, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
+Five skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 01, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
 
 ## What it checks
 

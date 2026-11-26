@@ -226,7 +226,11 @@ class Ranking(unittest.TestCase):
         self.assertTrue(steps["ACME-B6"].startswith("Name one owner"))
         self.assertTrue(steps["ACME-B5"].startswith("Payments squad lead writes the landing brief"))
         self.assertTrue(steps["ACME-B2"].startswith("Head of Product decides"))
-        self.assertTrue(steps["ACME-B8"].startswith("Run did-it-land"))
+        self.assertTrue(steps["ACME-B8"].startswith("Next in the loop, 02 Spec: run spec-auditor"), "no spec key yet, so the spec comes next")
+
+    def test_with_a_spec_and_no_result_the_next_step_is_did_it_land(self):
+        r = score.review_bet(bet(), [work()], AS_OF, {"spec": {"verdict": "pass"}})
+        self.assertTrue(r.next_step.startswith("Run did-it-land"))
 
 
 class Cost(unittest.TestCase):
