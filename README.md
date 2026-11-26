@@ -14,14 +14,24 @@ Install the bet-portfolio-review skill from https://github.com/darrencard/bet-po
 
 The repository is private until review, so the clone needs `gh` signed in with access.
 
-**See it first, in one command:** from a clone, `python3 skills/bet-portfolio-review/scripts/review.py --demo --out run` reviews the illustrative Acme roadmap. The same output is checked in at [examples/acme/review.md](examples/acme/review.md).
+**See it first:** the sample page is [examples/acme/bet-portfolio-review.html](examples/acme/bet-portfolio-review.html), reviewing the illustrative Acme roadmap. `--demo` runs a second, smaller fixture in one command: `python3 skills/bet-portfolio-review/scripts/review.py --demo --out run`.
 
 ```text
 Do these first
-1. Payments onboarding revamp (ACME-B5): Payments squad lead writes the landing brief.
-2. Trade directory listing (ACME-B6): Name one owner for this bet.
-3. Supplier price sync (ACME-B4): State the cost budget as two lines, tokens per task and price per token.
+1. Supplier price sync (ACME-8): Quoting squad lead writes the landing brief.
+2. Auto match (ACME-5): Name one owner for this bet.
+3. SMS reminders (ACME-7): Link the work that delivers this bet, or cut the bet.
 ```
+
+## Sample
+
+`examples/acme/` holds the canonical Acme landing briefs shared by every Landing Loop skill (copied unchanged into `briefs/`), a roadmap (`bets.csv`) and its work (`work.csv`). The bet followed end to end is `quote-drafting`. This one command, run from the repository root, regenerates the sample page, its Markdown and JSON twins, and the `portfolio` key of `examples/acme/landing/quote-drafting.json` (and the other bets' records):
+
+```bash
+python3 skills/bet-portfolio-review/scripts/review.py --csv examples/acme/bets.csv --work examples/acme/work.csv --as-of 2026-11-26 --title "Acme roadmap" --illustrative --out examples/acme --stem bet-portfolio-review --landing examples/acme/landing
+```
+
+A test runs that exact line on a fresh copy and checks the output matches the committed files byte for byte. Running it twice changes nothing.
 
 ## Step 1 of the Landing Loop
 
@@ -71,4 +81,4 @@ Templates for the two CSVs are in `skills/bet-portfolio-review/assets/`. Linear 
 - The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.9 or later, standard library only. MIT licensed. Version 0.2.1.
+Python 3.9 or later, standard library only. MIT licensed. Version 0.3.0.

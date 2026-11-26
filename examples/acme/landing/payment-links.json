@@ -1,15 +1,15 @@
 {
   "schema": "landing-loop/1",
-  "bet": "trade-directory-listing",
+  "bet": "payment-links",
   "brief": {
-    "path": "bets.csv row 7",
-    "sha256": "a9f3539699aa90afe29df62522a851679771b358b318141e04ac441ef097f39e"
+    "path": "briefs/payment-links.md",
+    "sha256": "af8e46e779055748c764067de2330a23d824e65e6c00cc93c9ab3974a7e5e2bc"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 1,
+      "value": 8,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -19,9 +19,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score": {
-      "value": 1,
+      "value": 14,
       "unit": "points of 14",
-      "source": "bets.csv row 7",
+      "source": "briefs/payment-links.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -29,9 +29,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score_percent": {
-      "value": 7,
+      "value": 100,
       "unit": "%",
-      "source": "bets.csv row 7",
+      "source": "briefs/payment-links.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -39,7 +39,7 @@
       "as_of": "2026-11-26"
     },
     "linked_work": {
-      "value": 1,
+      "value": 2,
       "unit": "work items",
       "source": "work.csv",
       "window": {
@@ -48,15 +48,12 @@
       },
       "as_of": "2026-11-26"
     },
-    "owner": "",
-    "decides": "",
+    "owner": "Payments squad lead",
+    "decides": "Head of Product, Payments squad",
     "gaps": [
-      "no-owner",
-      "brief-problems"
+      "no-result"
     ],
-    "brief_problems": [
-      "bar is missing or empty."
-    ],
-    "next_step": "Name one owner for this bet."
+    "brief_problems": [],
+    "next_step": "Run did-it-land on Payment link conversion once it has a reading from its source."
   }
 }

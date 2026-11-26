@@ -1,12 +1,12 @@
 {
   "schema": "landing-loop/1",
-  "bet": "crew-scheduling",
+  "bet": "quote-drafting",
   "brief": {
-    "path": "bets.csv row 8",
-    "sha256": "9c318382fb4b080f7594c980ce6ea90074e39e86f3491fb9a167aaf389f457ed"
+    "path": "briefs/quote-drafting.md",
+    "sha256": "decbe39590cc57b3d47125722a8d43e445d33c8f2f525c00277b94b7937dc95f"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
       "value": 4,
@@ -19,9 +19,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score": {
-      "value": 13,
+      "value": 14,
       "unit": "points of 14",
-      "source": "bets.csv row 8",
+      "source": "briefs/quote-drafting.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -29,9 +29,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score_percent": {
-      "value": 93,
+      "value": 100,
       "unit": "%",
-      "source": "bets.csv row 8",
+      "source": "briefs/quote-drafting.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -39,7 +39,7 @@
       "as_of": "2026-11-26"
     },
     "linked_work": {
-      "value": 0,
+      "value": 4,
       "unit": "work items",
       "source": "work.csv",
       "window": {
@@ -48,14 +48,13 @@
       },
       "as_of": "2026-11-26"
     },
-    "owner": "Field squad lead",
-    "decides": "VP Engineering",
+    "owner": "Quoting squad lead",
+    "decides": "Head of Product, Quoting squad",
     "gaps": [
-      "no-work",
       "date-passed",
       "no-result"
     ],
     "brief_problems": [],
-    "next_step": "Link the work that delivers this bet, or cut the bet."
+    "next_step": "The date, 2026-11-15, has passed with no result yet. Run did-it-land on Quote draft acceptance rate; then Head of Product, Quoting squad decides what comes next."
   }
 }

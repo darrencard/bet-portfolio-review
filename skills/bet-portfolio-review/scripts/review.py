@@ -52,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fail-on", default="", help="comma-separated gaps, such as no-owner,no-metric: exit 2 if any bet has one (for CI)")
     ap.add_argument("--title", default="Roadmap", help="the review's title")
     ap.add_argument("--out", type=Path, default=Path("run"), help="the folder to write into (default run/)")
+    ap.add_argument("--stem", default="review", help="the output file name before .md, .html and .json (default review)")
     ap.add_argument("--illustrative", action="store_true", help="stamp every output as illustrative sample data")
     ap.add_argument("--landing", type=Path, help="the Landing Loop record folder (default landing/, or <out>/landing with --demo)")
     ap.add_argument("--no-landing", action="store_true", help="do not read or write Landing Loop records")
@@ -100,12 +101,13 @@ def main(argv: list[str] | None = None) -> int:
     except (load.LoadError, ValueError) as e:
         raise SystemExit(f"review: {e}") from None
 
-    progress = {bid: (loop.progress(rec) if rec else None) for bid, rec in existing.items()} if existing is not None else None
+    progress = {bid: loop.progress(rec) for bid, rec in existing.items()} if existing is not None else None
     markdown = render.to_markdown(pf, args.title, sources, args.illustrative, progress)
     args.out.mkdir(parents=True, exist_ok=True)
-    (args.out / "review.md").write_text(markdown, encoding="utf-8")
-    (args.out / "review.html").write_text(render.to_html(pf, args.title, sources, args.illustrative, progress), encoding="utf-8")
-    (args.out / "review.json").write_text(render.to_json(pf, markdown, sources, args.illustrative, progress), encoding="utf-8")
+    out = {ext: args.out / f"{args.stem}.{ext}" for ext in ("md", "html", "json")}
+    out["md"].write_text(markdown, encoding="utf-8")
+    out["html"].write_text(render.to_html(pf, args.title, sources, args.illustrative, progress), encoding="utf-8")
+    out["json"].write_text(render.to_json(pf, markdown, sources, args.illustrative, progress), encoding="utf-8")
     if landing and existing is not None:
         written = loop.write(landing, pf, sources, existing)
         print(f"review: wrote the portfolio key to {len(written)} loop record(s) in {landing}/.", file=sys.stderr)
@@ -113,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"review: {len(pf.reviews)} bets, {pf.complete} with a brief that parses, {len(pf.orphans)} of {pf.work_total} work items linked to no bet.")
     for r in pf.reviews[:3]:
         print(f"  {r.rank}. {r.bet.id} {r.points}/{score.TOTAL}: {r.next_step}")
-    print(f"review: wrote {args.out / 'review.md'}, review.html and review.json.", file=sys.stderr)
+    print(f"review: wrote {out['md']}, {out['html'].name} and {out['json'].name}.", file=sys.stderr)
     failing = [f"{r.bet.id} ({g})" for r in pf.reviews for g in r.gaps if g in fail_on]
     if failing:
         print(f"review: --fail-on matched {len(failing)}: {', '.join(failing)}", file=sys.stderr)

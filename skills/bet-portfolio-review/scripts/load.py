@@ -110,6 +110,17 @@ def brief_from_columns(row: dict[str, str]) -> str:
     return "## Landing brief\n" + "\n".join(lines) if lines else ""
 
 
+def brief_file(csv_path: Path, name: str, row: int) -> str:
+    """The brief in a Markdown file named by the `brief_file` column, relative to the CSV's folder and inside it."""
+    folder = csv_path.resolve().parent
+    target = (folder / name).resolve()
+    if folder not in target.parents:
+        raise LoadError(f"{csv_path.name} row {row}: brief_file {name!r} is outside the CSV's folder. Name a file inside it.")
+    if not target.is_file():
+        raise LoadError(f"{csv_path.name} row {row}: brief_file {name!r} does not exist. Fix the path or clear the cell.")
+    return read_text(target)
+
+
 def has_heading(text: str) -> bool:
     return any(landing_brief.HEADING.match(line.strip()) for line in text.splitlines())
 
@@ -129,10 +140,14 @@ def csv_bets(path: Path) -> list[Bet]:
     need(path, found, "id", "name")
     bets = []
     for i, row in enumerate(found, start=2):
-        text = row.get("description", "")
+        source = f"{path.name} row {i}"
+        if row.get("brief_file"):
+            text, source = brief_file(path, row["brief_file"], i), row["brief_file"]
+        else:
+            text = row.get("description", "")
         if not has_heading(text):
             text = brief_from_columns(row) or text
-        bet = Bet(id=row["id"], name=row["name"] or row["id"], owner=row.get("owner", ""), description=text, source=f"{path.name} row {i}")
+        bet = Bet(id=row["id"], name=row["name"] or row["id"], owner=row.get("owner", ""), description=text, source=source)
         bet.aliases = {bet.id.lower(), bet.name.lower()}
         bets.append(bet)
     check_unique(bets)

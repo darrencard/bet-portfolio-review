@@ -25,6 +25,9 @@ import hashlib
 import io
 import json
 import re
+import shlex
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -323,17 +326,41 @@ class Output(unittest.TestCase):
         self.assertIn("## Do these first", head)
         self.assertIn("1. **Trade directory listing (ACME-B6):**", head)
 
-    def test_checked_in_example_is_current(self):
+    def test_sample_command_reproduces_the_committed_sample(self):
+        """The README's Sample command, run on a fresh copy of the inputs, writes the committed files byte for byte."""
+        readme = (ROOT / "README.md").read_text(encoding="utf-8").split("## Sample", 1)[1]
+        line = re.search(r"```bash\n(python3 [^\n]+)\n```", readme).group(1)
+        sample = ROOT / "examples" / "acme"
         with tempfile.TemporaryDirectory() as d:
-            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-                review.main(["--demo", "--out", d])
-            for name in ("review.md", "review.html"):
-                with self.subTest(name=name):
-                    self.assertEqual(
-                        (Path(d) / name).read_text(encoding="utf-8"),
-                        (ROOT / "examples" / "acme" / name).read_text(encoding="utf-8"),
-                        "regenerate with: python3 skills/bet-portfolio-review/scripts/review.py --demo --out examples/acme",
-                    )
+            tmp = Path(d)
+            shutil.copytree(SKILL, tmp / "skills" / "bet-portfolio-review", ignore=shutil.ignore_patterns("__pycache__"))
+            (tmp / "examples" / "acme" / "landing").mkdir(parents=True)
+            for name in ("bets.csv", "work.csv"):
+                shutil.copyfile(sample / name, tmp / "examples" / "acme" / name)
+            shutil.copytree(sample / "briefs", tmp / "examples" / "acme" / "briefs")
+            argv = shlex.split(line)
+            self.assertEqual(argv[0], "python3")
+            # The command is this repository's own README line, run with this interpreter on a temporary copy.
+            done = subprocess.run([sys.executable, *argv[1:]], cwd=tmp, capture_output=True, text=True, check=False)  # noqa: S603
+            self.assertEqual(done.returncode, 0, done.stderr)
+            made = sorted(p.relative_to(tmp / "examples" / "acme") for p in (tmp / "examples" / "acme").rglob("*") if p.is_file())
+            for rel in made:
+                with self.subTest(file=str(rel)):
+                    self.assertEqual((tmp / "examples" / "acme" / rel).read_bytes(), (sample / rel).read_bytes(), f"regenerate with: {line}")
+            self.assertIn(Path("bet-portfolio-review.html"), made)
+            self.assertIn(Path("landing") / "quote-drafting.json", made)
+
+    def test_sample_record_holds_only_this_skills_key(self):
+        record = json.loads((ROOT / "examples" / "acme" / "landing" / "quote-drafting.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(record), {"schema", "bet", "brief", "portfolio"})
+        self.assertEqual(record["bet"], "quote-drafting")
+
+    def test_brief_file_must_sit_inside_the_csv_folder(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "bets.csv"
+            path.write_text("id,name,owner,brief_file\nB1,One,Lead,../outside.md\n", encoding="utf-8")
+            with self.assertRaises(load.LoadError):
+                load.csv_bets(path)
 
     def test_deterministic(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:

@@ -1,15 +1,15 @@
 {
   "schema": "landing-loop/1",
-  "bet": "owner-reporting-dashboards",
+  "bet": "sms-reminders",
   "brief": {
-    "path": "bets.csv row 9",
-    "sha256": "7050a7578c6d5a18428bdcb6fb0d3e4c01549760179d8e25c89c0594118f4967"
+    "path": "briefs/sms-reminders.md",
+    "sha256": "44eb4deeb8e20f9d7d04286dfb91f4e95b2a48e327734f1c175426b29220660b"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 6,
+      "value": 3,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -19,9 +19,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score": {
-      "value": 14,
+      "value": 13,
       "unit": "points of 14",
-      "source": "bets.csv row 9",
+      "source": "briefs/sms-reminders.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -29,9 +29,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score_percent": {
-      "value": 100,
+      "value": 93,
       "unit": "%",
-      "source": "bets.csv row 9",
+      "source": "briefs/sms-reminders.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -39,7 +39,7 @@
       "as_of": "2026-11-26"
     },
     "linked_work": {
-      "value": 2,
+      "value": 0,
       "unit": "work items",
       "source": "work.csv",
       "window": {
@@ -48,12 +48,13 @@
       },
       "as_of": "2026-11-26"
     },
-    "owner": "Insights squad lead",
-    "decides": "Head of Product",
+    "owner": "Messaging squad lead",
+    "decides": "Head of Product, Messaging squad",
     "gaps": [
+      "no-work",
       "no-result"
     ],
     "brief_problems": [],
-    "next_step": "Run did-it-land on Weekly active owners viewing reports once it has a reading from its source."
+    "next_step": "Link the work that delivers this bet, or cut the bet."
   }
 }

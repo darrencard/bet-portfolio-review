@@ -1,35 +1,12 @@
 {
   "schema": "landing-loop/1",
-  "bet": "mobile-job-sheets",
-  "illustrative": true,
+  "bet": "automatic-reminders",
   "brief": {
-    "path": "bets.csv row 4",
-    "sha256": "4494310b26b24104025fabc1f6888403469c25dcd1a75ea1f1fbe5b32fb5cbb7"
-  },
-  "spec": {
-    "tool": "spec-auditor",
-    "as_of": "2026-10-15",
-    "gaps": [
-      "no rollback plan"
-    ]
-  },
-  "landed": {
-    "tool": "did-it-land",
-    "as_of": "2026-11-24",
-    "status": "watch",
-    "current": {
-      "value": 22,
-      "unit": "%",
-      "source": "Product analytics: job_sheet_completed event",
-      "window": {
-        "from": "2026-11-01",
-        "to": "2026-11-24"
-      },
-      "as_of": "2026-11-24"
-    }
+    "path": "briefs/automatic-reminders.md",
+    "sha256": "7c768f623c57f867df53c20242cdf4849f3146d0ba214abb593f42db7a6291d3"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
       "value": 7,
@@ -44,7 +21,7 @@
     "brief_score": {
       "value": 14,
       "unit": "points of 14",
-      "source": "bets.csv row 4",
+      "source": "briefs/automatic-reminders.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -54,7 +31,7 @@
     "brief_score_percent": {
       "value": 100,
       "unit": "%",
-      "source": "bets.csv row 4",
+      "source": "briefs/automatic-reminders.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -62,7 +39,7 @@
       "as_of": "2026-11-26"
     },
     "linked_work": {
-      "value": 3,
+      "value": 2,
       "unit": "work items",
       "source": "work.csv",
       "window": {
@@ -71,10 +48,12 @@
       },
       "as_of": "2026-11-26"
     },
-    "owner": "Field squad lead",
-    "decides": "VP Engineering",
-    "gaps": [],
+    "owner": "Payments squad lead",
+    "decides": "Head of Product, Payments squad",
+    "gaps": [
+      "no-result"
+    ],
     "brief_problems": [],
-    "next_step": "Take the next reading of Job sheets completed on mobile before 2027-01-31."
+    "next_step": "Run did-it-land on Reminders sent per week once it has a reading from its source."
   }
 }

@@ -1,0 +1,426 @@
+{
+  "as_of": "2026-11-26",
+  "illustrative": true,
+  "sources": {
+    "bets": "bets.csv",
+    "work": "work.csv",
+    "records": "landing/*.json"
+  },
+  "total_points": 14,
+  "portfolio": {
+    "Bets on the roadmap": {
+      "value": "8",
+      "computed_from": "bets.csv"
+    },
+    "Bets whose brief parses (landing_brief.py)": {
+      "value": "7",
+      "computed_from": "bets.csv"
+    },
+    "Work items": {
+      "value": "18",
+      "computed_from": "work.csv"
+    },
+    "Work items linked to no bet": {
+      "value": "3",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Share of work linked to a bet": {
+      "value": "83%",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Share of work under a bet whose brief parses": {
+      "value": "78%",
+      "computed_from": "bets.csv, work.csv"
+    },
+    "Bets landed": {
+      "value": "0",
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
+    },
+    "Bets watch": {
+      "value": "0",
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
+    },
+    "Bets stalled": {
+      "value": "0",
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
+    },
+    "Bets with no result yet": {
+      "value": "8",
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
+    }
+  },
+  "gap_counts": {
+    "no-owner": 1,
+    "no-brief": 1,
+    "brief-problems": 0,
+    "no-work": 1,
+    "date-passed": 2,
+    "no-result": 7
+  },
+  "bets": [
+    {
+      "rank": 1,
+      "id": "ACME-8",
+      "name": "Supplier price sync",
+      "owner": "Quoting squad lead",
+      "source": "bets.csv row 9",
+      "points": 4,
+      "percent": 29,
+      "gaps": [
+        "no-brief"
+      ],
+      "status": null,
+      "brief_problems": [
+        "the project description is empty."
+      ],
+      "linked_work": [
+        "SP-801"
+      ],
+      "next_step": "Quoting squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "1",
+        "14",
+        "29",
+        "4",
+        "8",
+        "9"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "ACME-5",
+      "name": "Auto match",
+      "owner": "",
+      "source": "briefs/auto-match.md",
+      "points": 11,
+      "percent": 79,
+      "gaps": [
+        "no-owner",
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "AM-501"
+      ],
+      "next_step": "Name one owner for this bet.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "1",
+        "11",
+        "12",
+        "14",
+        "2",
+        "2026",
+        "31",
+        "5",
+        "79",
+        "80"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "ACME-7",
+      "name": "SMS reminders",
+      "owner": "Messaging squad lead",
+      "source": "briefs/sms-reminders.md",
+      "points": 13,
+      "percent": 93,
+      "gaps": [
+        "no-work",
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [],
+      "next_step": "Link the work that delivers this bet, or cut the bet.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "0",
+        "12",
+        "13",
+        "14",
+        "15",
+        "2026",
+        "3",
+        "55",
+        "7",
+        "93"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "ACME-1",
+      "name": "Quote drafting",
+      "owner": "Quoting squad lead",
+      "source": "briefs/quote-drafting.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "date-passed",
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "QD-101",
+        "QD-102",
+        "QD-103",
+        "QD-104"
+      ],
+      "next_step": "The date, 2026-11-15, has passed with no result yet. Run did-it-land on Quote draft acceptance rate; then Head of Product, Quoting squad decides what comes next.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "1",
+        "100",
+        "11",
+        "14",
+        "15",
+        "15,",
+        "2026",
+        "4",
+        "40"
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "ACME-6",
+      "name": "Job scheduler",
+      "owner": "Field squad lead",
+      "source": "briefs/job-scheduler.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "date-passed",
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "JS-601",
+        "JS-602"
+      ],
+      "next_step": "The date, 2026-10-31, has passed with no result yet. Run did-it-land on Weekly active schedulers; then Head of Product, Field squad decides what comes next.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "10",
+        "100",
+        "14",
+        "2",
+        "2026",
+        "3,000",
+        "3,000,",
+        "31",
+        "31,",
+        "5",
+        "6"
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "ACME-2",
+      "name": "Invoice chasing",
+      "owner": "Payments squad lead",
+      "source": "briefs/invoice-chasing.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "IC-201",
+        "IC-202",
+        "IC-203"
+      ],
+      "next_step": "Run did-it-land on Days sales outstanding once it has a reading from its source.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "100",
+        "12",
+        "14",
+        "2",
+        "2026",
+        "3",
+        "30",
+        "30,",
+        "31",
+        "6"
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "ACME-3",
+      "name": "Automatic reminders",
+      "owner": "Payments squad lead",
+      "source": "briefs/automatic-reminders.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "AR-301",
+        "AR-302"
+      ],
+      "next_step": "Run did-it-land on Reminders sent per week once it has a reading from its source.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "100",
+        "11",
+        "14",
+        "2",
+        "20,000",
+        "20,000,",
+        "2026",
+        "3",
+        "30",
+        "7"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "ACME-4",
+      "name": "Payment links",
+      "owner": "Payments squad lead",
+      "source": "briefs/payment-links.md",
+      "points": 14,
+      "percent": 100,
+      "gaps": [
+        "no-result"
+      ],
+      "status": null,
+      "brief_problems": [],
+      "linked_work": [
+        "PL-401",
+        "PL-402"
+      ],
+      "next_step": "Run did-it-land on Payment link conversion once it has a reading from its source.",
+      "loop": {
+        "spec": false,
+        "evals": false,
+        "cost": false,
+        "landed": false,
+        "landed_status": null
+      },
+      "figures": [
+        "100",
+        "11",
+        "14",
+        "18",
+        "2",
+        "2026",
+        "30",
+        "4",
+        "8"
+      ]
+    }
+  ],
+  "orphans": [
+    {
+      "id": "OPS-901",
+      "why": "no bet",
+      "source": "work.csv row 17"
+    },
+    {
+      "id": "OPS-902",
+      "why": "no bet",
+      "source": "work.csv row 18"
+    },
+    {
+      "id": "OPS-903",
+      "why": "links to Growth, which is not on the roadmap",
+      "source": "work.csv row 19"
+    }
+  ],
+  "figures": [
+    "0",
+    "1",
+    "10",
+    "100",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "15,",
+    "17",
+    "18",
+    "19",
+    "2",
+    "20,000",
+    "20,000,",
+    "2026",
+    "26",
+    "29",
+    "3",
+    "3,000",
+    "3,000,",
+    "30",
+    "30,",
+    "31",
+    "31,",
+    "4",
+    "40",
+    "5",
+    "55",
+    "6",
+    "7",
+    "78",
+    "79",
+    "8",
+    "80",
+    "83",
+    "9",
+    "901",
+    "902",
+    "903",
+    "93"
+  ]
+}

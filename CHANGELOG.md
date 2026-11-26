@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 (2026-11-26)
+
+- Sample: `examples/acme/` reads the canonical Acme landing briefs shared by the Landing Loop skills and renders `bet-portfolio-review.html`, with its Markdown and JSON twins and the `portfolio` key of `landing/quote-drafting.json`. The README's Sample section has the one command; a test checks it reproduces the committed files byte for byte.
+- `bets.csv` takes a `brief_file` column: a Markdown brief file inside the CSV's folder.
+- `--stem` names the output files (default `review`).
+- The HTML adds a scorecard in the Leader Report's style: each bet's definition of good in mono, with the result word from did-it-land. The ranked table leaves the result to the scorecard and no longer wraps at desktop width.
+- A bet whose date has passed with no result is told to run did-it-land first, not to extend or stop.
+- A bet with no loop record yet reads the same as an empty record, so a rerun prints the same page.
+
 ## 0.2.1 (2026-11-26)
 
 - One owner per figure, per the Landing Loop contract. Brief completeness is `landing_brief.parse`'s call, listed in its own words (as spec-auditor does); this skill's own list of brief parts, placeholder list and part weights are gone. Readiness is owner 3, brief 10, linked work 1.

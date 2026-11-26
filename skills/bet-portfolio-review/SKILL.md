@@ -4,7 +4,7 @@ description: Scores a roadmap of bets (live from Linear projects and issues or J
 license: MIT. See LICENSE in the repository root.
 metadata:
   author: Dacard
-  version: "0.2.1"
+  version: "0.3.0"
 ---
 
 # Bet portfolio review
@@ -45,7 +45,7 @@ Live first. Use a file only when the team's tracker has no connector in this ses
 - **Linear (live).** With the Linear connector, call `list_projects` (fields id, name, description, lead, status, targetDate) and save the JSON as it stands to `projects.json`. The connector cuts long descriptions short ("truncated, use get_project"): for each such project, call `get_project` and put its full description in place, or the brief is read as missing. Call `list_issues` (fields id, title, project, status) and save each page as it comes (`issues-1.json`, `issues-2.json`). A project is a bet, its lead is the owner, its description holds the brief. Canceled projects and issues are left out unless you pass `--include-closed`. Both files are read with the Leader Report's own `from_linear.py`, vendored here, so the two skills read a project the same way.
 - **Jira (live).** With the Jira connector or `/rest/api/3/search`, save each page of search results as it stands, with the fields summary, issuetype, assignee, status, description and parent. Epics are bets; every other issue is work, linked through its parent. Read with the Leader Report's `from_jira.py`; descriptions in Atlassian Document Format are read as text.
 - **Linear projects CSV.** Linear's own projects export (`Name`, `Status`, `Lead`, `Description`) also works with `--linear-projects`.
-- **CSV.** `bets.csv` with `id`, `name`, `owner`, and either a `description` column holding a "Landing brief" block or one column per part (see `assets/bets-template.csv`). `work.csv` with `id`, `title`, `bet` (the bet's id or name; empty when it has none).
+- **CSV.** `bets.csv` with `id`, `name`, `owner`, and a `description` column holding a "Landing brief" block, a `brief_file` column naming a Markdown brief inside the CSV's folder, or one column per part (see `assets/bets-template.csv`). `work.csv` with `id`, `title`, `bet` (the bet's id or name; empty when it has none).
 - **Linear.** With the Linear connector, call `list_projects` and save the JSON as it stands to `projects.json`; call `list_issues` for the same projects and save it to `issues.json`. A project is a bet. Its lead is the owner. Its description holds the brief.
 - **Jira CSV.** Export the issues to CSV, with the Description and Parent fields. Rows of type Epic are bets (pass `--jira-bet-type` if the team uses another type); every other row is work.
 
@@ -60,7 +60,7 @@ python3 scripts/review.py --csv bets.csv --work work.csv --as-of YYYY-MM-DD
 python3 scripts/review.py --jira export.csv --as-of YYYY-MM-DD
 ```
 
-It writes `run/review.md`, `run/review.html` and `run/review.json`, and the `portfolio` key of `landing/<bet-slug>.json` for each bet (`--landing DIR` to put the records elsewhere, `--no-landing` to skip them). It refuses to overwrite a file in that folder that is not a `landing-loop/1` record. If a record's brief hash differs from the brief it reads now, it keeps the record's brief and says so in the portfolio key. Add `--illustrative` only for sample data.
+It writes `run/review.md`, `run/review.html` and `run/review.json`, and the `portfolio` key of `landing/<bet-slug>.json` for each bet (`--landing DIR` to put the records elsewhere, `--no-landing` to skip them). It refuses to overwrite a file in that folder that is not a `landing-loop/1` record. If a record's brief hash differs from the brief it reads now, it keeps the record's brief and says so in the portfolio key. `--stem NAME` names the three files `NAME.md`, `NAME.html` and `NAME.json`. Add `--illustrative` only for sample data.
 
 ### 3. Show it
 

@@ -20,7 +20,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from loop import progress_text
+from loop import progress, progress_text
 from score import LABELS, TOTAL, Portfolio, Review, orphan_move
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "leader-report-template.html"
@@ -98,6 +98,14 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         "",
         *[f"{r.rank}. **{md(r.bet.name)} ({md(r.bet.id)}):** {md(r.next_step)}" for r in pf.reviews[:3]],
         "",
+        "## Scorecard",
+        "",
+        "Each bet's definition of good, read from its brief. The result is did-it-land's; this review prints it and never computes one.",
+        "",
+        "| Rank | Bet | Metric | Bar | Better | By | Result |",
+        "|---|---|---|---|---|---|---|",
+        *[scorecard_md(r) for r in pf.reviews],
+        "",
         "## Ranked review",
         "",
         "Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop shows which Landing Loop steps the bet's record holds.",
@@ -141,6 +149,14 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
     return "\n".join(out)
 
 
+def scorecard_md(r: Review) -> str:
+    b = r.brief
+    head = f"| {r.rank} | {md(r.bet.name)} ({md(r.bet.id)}) "
+    if b is None:
+        return head + f"| no landing brief that parses | none | none | none | {status_text(r)} |"
+    return head + f"| {md(b.metric)} | {md(b.bar_text)} | {'higher' if b.higher_is_better else 'lower'} | {md(b.by)} | {status_text(r)} |"
+
+
 def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
     """Each portfolio figure, its value, and the files it was computed from."""
     s = sources or {}
@@ -169,9 +185,13 @@ main{margin-left:0}
 .brand{margin-bottom:28px}
 .own .li-t{min-width:22px;display:inline-block}
 td .sh{width:56px}
-.loop{display:flex;flex-wrap:wrap;gap:4px}
+.loop{display:grid;grid-template-columns:repeat(2,max-content);gap:4px}
+td.bn{min-width:150px}
+td.gp{min-width:140px}
+td.ns{min-width:280px}
+td.src{white-space:normal;min-width:96px}
 .chip.off{color:var(--t3);border-style:dashed}
-.nos{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.nos{white-space:nowrap;font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
 .gp{font-size:12px;color:var(--t2)}
 .betcard h3{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
 .betcard .nm{font:600 18px/1.25 var(--display);color:var(--t1);margin:0 0 12px;letter-spacing:-.02em}
@@ -212,15 +232,34 @@ def share_bar(percent: int) -> str:
 def loop_html(r: Review, loop: dict[str, Progress | None] | None) -> str:
     if loop is None:
         return '<span class="nos">not read</span>'
-    p = loop.get(r.bet.id)
-    if p is None:
-        return '<span class="nos">no record</span>'
+    p = loop.get(r.bet.id) or progress({})  # no record yet reads the same as an empty one, so a rerun prints the same page
     chips = [f'<span class="chip{"" if p[k] else " off"}">{k}</span>' for k in ("spec", "evals", "cost")]
     if p["landed_status"]:
         chips.append(f'<span class="st {h(p["landed_status"])}">{h(p["landed_status"])}</span>')
     else:
         chips.append(f'<span class="chip{"" if p["landed"] else " off"}">result</span>')
     return f'<span class="loop">{"".join(chips)}</span>'
+
+
+def scorecard_html(pf: Portfolio) -> str:
+    """The Leader Report's scorecard rows: bet and metric, the definition of good in mono, the status word. No actual:
+    the reading is did-it-land's."""
+    out = []
+    for r in pf.reviews:
+        b = r.brief
+        owner = f'Owner <span style="color:var(--brass)">{h(r.bet.owner)}</span>' if r.bet.owner else "No owner"
+        decides = f" · Decides {h(b.decides)}" if b else ""
+        sub = f'<span class="sc-d">{h(b.metric)}</span>' if b else '<span class="sc-d">No landing brief that parses</span>'
+        if b:
+            line = f"<em>Bar</em> {h(b.bar_text)} · {'higher' if b.higher_is_better else 'lower'} is better · <em>By</em> {h(b.by)}"
+        else:
+            line = "<em>Bar</em> none · <em>By</em> none"
+        out.append(
+            f'<div class="sc-r"><div class="sc-n"><span>{r.rank}. {h(r.bet.name)}</span>{sub}<span class="sc-x">{owner}{decides}</span></div>'
+            f'<div class="sc-v"><span class="sc-l">{line}</span></div><div class="sc-s">{status_html(r)}</div></div>'
+        )
+    head = '<div class="sc-h"><span>Bet</span><span>Definition of good</span><span>Result</span></div>'
+    return f'<div class="sc">{head}{"".join(out)}</div>'
 
 
 def table(heads: list[str], rows: str, num: tuple[int, ...] = ()) -> str:
@@ -253,20 +292,26 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
         for r in pf.reviews[:3]
     )
     do_first = section("01", "Do these first", f'<div class="card"><ul>{firsts}</ul></div>')
+    scorecard = section(
+        "02",
+        "Scorecard",
+        "<p class=\"lede\">Each bet's definition of good, read from its brief. The result is did-it-land's; this review prints it and never computes one.</p>"
+        f'<div class="card">{scorecard_html(pf)}</div>',
+    )
     rows = "".join(
-        f'<tr><td class="num">{r.rank}</td><td>{h(r.bet.name)} <span class="t3">({h(r.bet.id)})</span></td>'
+        f'<tr><td class="num">{r.rank}</td><td class="bn">{h(r.bet.name)} <span class="t3">({h(r.bet.id)})</span></td>'
         f'<td><span class="mo" style="color:var(--brass)">{h(r.bet.owner) or "none"}</span></td>'
         f'<td class="nw">{share_bar(r.percent)}<span class="mo">{r.points} of {TOTAL}</span></td>'
-        f'<td class="gp">{h(gap_list(r))}</td><td>{status_html(r)}</td><td>{loop_html(r, loop)}</td><td>{h(r.next_step)}</td></tr>'
+        f'<td class="gp">{h(gap_list(r))}</td><td>{loop_html(r, loop)}</td><td class="ns">{h(r.next_step)}</td></tr>'
         for r in pf.reviews
     )
     ranked = section(
-        "02",
+        "03",
         "Ranked review",
         '<p class="lede">Rank 1 needs work first. Brief problems are landing_brief.py\'s own words. '
-        "Loop shows which Landing Loop steps each bet's record holds.</p>"
+        "Loop shows which Landing Loop steps each bet's record holds; the result is in the scorecard.</p>"
         '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Bet</th><th>Owner</th><th>Readiness</th><th>Gaps</th>'
-        f"<th>Result</th><th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
+        f"<th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
     )
     cards = []
     for r in pf.reviews:
@@ -280,18 +325,18 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
             f'<div class="card betcard"><h3><span>{r.rank} · {h(r.bet.id)}</span>{status_html(r)}</h3><p class="nm">{h(r.bet.name)}</p>'
             f'<ul>{lis}</ul><p class="nx"><b>Next step</b>{h(r.next_step)}</p></div>'
         )
-    each = section("03", "Each bet", f'<div class="grid g2">{"".join(cards)}</div>')
+    each = section("04", "Each bet", f'<div class="grid g2">{"".join(cards)}</div>')
     orphan_rows = "".join(
-        f"<tr><td>{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(o.why)}</td><td class='mo'>{h(o.work.source)}</td></tr>" for o in pf.orphans
+        f"<tr><td>{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(o.why)}</td><td class='mo src'>{h(o.work.source)}</td></tr>" for o in pf.orphans
     )
     orphans = section(
-        "04",
+        "05",
         "Work linked to no bet",
         f'<p class="lede">{h(orphan_move(pf.orphans))}</p>' + (table(["Item", "Title", "Why", "Source"], orphan_rows) if pf.orphans else ""),
     )
     ev_rows = "".join(f'<tr><td>{h(a)}</td><td class="num">{h(b)}</td><td class="mo">{h(c)}</td></tr>' for a, b, c in figures_table(pf, sources))
     evidence = section(
-        "05",
+        "06",
         "Evidence",
         table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))
         + '<p class="asof">Computed by scripts/review.py. The readiness weights are in scripts/score.py; brief problems come from landing_brief.py.</p>',
@@ -306,6 +351,7 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
             "<body><main>",
             cover,
             do_first,
+            scorecard,
             ranked,
             each,
             orphans,

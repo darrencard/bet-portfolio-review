@@ -1,0 +1,19 @@
+id,title,bet
+QD-101,Draft quote text from the job notes,ACME-1
+QD-102,Pull line prices from the price book,ACME-1
+QD-103,Accept or edit a drafted quote,ACME-1
+QD-104,Log draft acceptance events,ACME-1
+IC-201,Pick overdue invoices to chase,ACME-2
+IC-202,Draft the chaser message,ACME-2
+IC-203,Stop chasing once paid,ACME-2
+AR-301,Reminder schedule settings,ACME-3
+AR-302,Reminder wording drafts,ACME-3
+PL-401,Payment link on the invoice PDF,ACME-4
+PL-402,Mark paid from the link callback,ACME-4
+AM-501,Fuzzy payee matching,ACME-5
+JS-601,Drag a job onto the calendar,ACME-6
+JS-602,Crew notification on booking,ACME-6
+SP-801,Supplier catalogue import,ACME-8
+OPS-901,Dark mode for the dashboard,
+OPS-902,Upgrade the PDF library,
+OPS-903,Referral programme banner,Growth

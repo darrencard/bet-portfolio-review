@@ -1,15 +1,15 @@
 {
   "schema": "landing-loop/1",
-  "bet": "payments-onboarding-revamp",
+  "bet": "auto-match",
   "brief": {
-    "path": "bets.csv row 6",
-    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    "path": "briefs/auto-match.md",
+    "sha256": "43cc0e7e288783520ef8048eb8fe1aca6514e5369d66a4b2de7527f61c439832"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 3,
+      "value": 2,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -19,9 +19,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score": {
-      "value": 4,
+      "value": 11,
       "unit": "points of 14",
-      "source": "bets.csv row 6",
+      "source": "briefs/auto-match.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -29,9 +29,9 @@
       "as_of": "2026-11-26"
     },
     "brief_score_percent": {
-      "value": 29,
+      "value": 79,
       "unit": "%",
-      "source": "bets.csv row 6",
+      "source": "briefs/auto-match.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -39,7 +39,7 @@
       "as_of": "2026-11-26"
     },
     "linked_work": {
-      "value": 2,
+      "value": 1,
       "unit": "work items",
       "source": "work.csv",
       "window": {
@@ -48,14 +48,13 @@
       },
       "as_of": "2026-11-26"
     },
-    "owner": "Payments squad lead",
-    "decides": "",
+    "owner": "",
+    "decides": "Head of Finance Product, Ledger squad",
     "gaps": [
-      "no-brief"
+      "no-owner",
+      "no-result"
     ],
-    "brief_problems": [
-      "the project description is empty."
-    ],
-    "next_step": "Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line."
+    "brief_problems": [],
+    "next_step": "Name one owner for this bet."
   }
 }

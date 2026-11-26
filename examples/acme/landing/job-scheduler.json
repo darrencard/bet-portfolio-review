@@ -1,0 +1,60 @@
+{
+  "schema": "landing-loop/1",
+  "bet": "job-scheduler",
+  "brief": {
+    "path": "briefs/job-scheduler.md",
+    "sha256": "88147aa6089a7254b6f85aa2b4a41dd2562ef779964691caa3b24ba6f0f78161"
+  },
+  "portfolio": {
+    "tool": "bet-portfolio-review 0.3.0",
+    "as_of": "2026-11-26",
+    "rank": {
+      "value": 5,
+      "unit": "rank of 8 bets, 1 needs work first",
+      "source": "bets.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score": {
+      "value": 14,
+      "unit": "points of 14",
+      "source": "briefs/job-scheduler.md",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "brief_score_percent": {
+      "value": 100,
+      "unit": "%",
+      "source": "briefs/job-scheduler.md",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "linked_work": {
+      "value": 2,
+      "unit": "work items",
+      "source": "work.csv",
+      "window": {
+        "from": "2026-11-26",
+        "to": "2026-11-26"
+      },
+      "as_of": "2026-11-26"
+    },
+    "owner": "Field squad lead",
+    "decides": "Head of Product, Field squad",
+    "gaps": [
+      "date-passed",
+      "no-result"
+    ],
+    "brief_problems": [],
+    "next_step": "The date, 2026-10-31, has passed with no result yet. Run did-it-land on Weekly active schedulers; then Head of Product, Field squad decides what comes next."
+  }
+}

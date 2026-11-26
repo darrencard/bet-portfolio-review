@@ -25,7 +25,7 @@ from load import Bet, LoadError
 from score import STATUS_WORDS, TOTAL, Portfolio, Review
 
 SCHEMA = "landing-loop/1"
-TOOL = "bet-portfolio-review 0.2.1"
+TOOL = "bet-portfolio-review 0.3.0"
 STEPS = ("spec", "evals", "cost", "landed")
 
 
@@ -62,8 +62,8 @@ def progress(record: dict[str, Any] | None) -> dict[str, Any]:
 
 
 def progress_text(p: dict[str, Any] | None) -> str:
-    if p is None:
-        return "no loop record"
+    # No record yet reads the same as an empty one, so running the review twice prints the same thing.
+    p = p or progress({})
     # The landed step is called "result" here, so the word landed only ever prints as a status.
     parts = [f"{k} {'yes' if p[k] else 'no'}" for k in ("spec", "evals", "cost")]
     parts.append(f"result {p['landed_status']}" if p["landed_status"] else f"result {'yes' if p['landed'] else 'no'}")

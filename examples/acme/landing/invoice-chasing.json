@@ -1,70 +1,15 @@
 {
   "schema": "landing-loop/1",
   "bet": "invoice-chasing",
-  "illustrative": true,
   "brief": {
-    "path": "bets.csv row 3",
-    "sha256": "5cfa55e3c2d398ace8836cc09eee107c284f3c3afe087786ef0450af18003a8c"
-  },
-  "spec": {
-    "tool": "spec-auditor",
-    "as_of": "2026-09-20",
-    "gaps": []
-  },
-  "evals": {
-    "tool": "eval-kit",
-    "as_of": "2026-11-24",
-    "tasks": {
-      "value": 120,
-      "unit": "tasks",
-      "source": "eval-kit traces",
-      "window": {
-        "from": "2026-11-01",
-        "to": "2026-11-24"
-      },
-      "as_of": "2026-11-24"
-    },
-    "tasks_unassisted": {
-      "value": 84,
-      "unit": "tasks",
-      "source": "eval-kit traces",
-      "window": {
-        "from": "2026-11-01",
-        "to": "2026-11-24"
-      },
-      "as_of": "2026-11-24"
-    },
-    "pass_rate": {
-      "value": 70,
-      "unit": "%",
-      "source": "eval-kit traces",
-      "window": {
-        "from": "2026-11-01",
-        "to": "2026-11-24"
-      },
-      "as_of": "2026-11-24"
-    }
-  },
-  "landed": {
-    "tool": "did-it-land",
-    "as_of": "2026-11-24",
-    "status": "stalled",
-    "current": {
-      "value": 18,
-      "unit": "days",
-      "source": "Billing export: paid_at minus sent_at",
-      "window": {
-        "from": "2026-11-01",
-        "to": "2026-11-24"
-      },
-      "as_of": "2026-11-24"
-    }
+    "path": "briefs/invoice-chasing.md",
+    "sha256": "bb7106b4189b86e26c6f586cb9fc4cbc06818c497bdfe6b6f449c57cfbc19808"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.1",
+    "tool": "bet-portfolio-review 0.3.0",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 5,
+      "value": 6,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -76,7 +21,7 @@
     "brief_score": {
       "value": 14,
       "unit": "points of 14",
-      "source": "bets.csv row 3",
+      "source": "briefs/invoice-chasing.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -86,7 +31,7 @@
     "brief_score_percent": {
       "value": 100,
       "unit": "%",
-      "source": "bets.csv row 3",
+      "source": "briefs/invoice-chasing.md",
       "window": {
         "from": "2026-11-26",
         "to": "2026-11-26"
@@ -104,9 +49,11 @@
       "as_of": "2026-11-26"
     },
     "owner": "Payments squad lead",
-    "decides": "Head of Product",
-    "gaps": [],
+    "decides": "Head of Product, Payments squad",
+    "gaps": [
+      "no-result"
+    ],
     "brief_problems": [],
-    "next_step": "Head of Product decides: change the approach or stop the bet."
+    "next_step": "Run did-it-land on Days sales outstanding once it has a reading from its source."
   }
 }

@@ -117,6 +117,8 @@ def next_step(r: Review) -> str:
         if gap == "no-work" and r.status != "landed":
             return "Link the work that delivers this bet, or cut the bet."
     assert b is not None  # noqa: S101  (a bet with no brief problems has a parsed brief)
+    if "date-passed" in r.gaps and r.status is None:
+        return f"The date, {b.by}, has passed with no result yet. Run did-it-land on {b.metric}; then {who} decides what comes next."
     if "date-passed" in r.gaps:
         return f"The date, {b.by}, has passed. {who} decides: extend the date, change the approach or stop."
     if r.status is None:
