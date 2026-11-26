@@ -3,10 +3,10 @@
   "bet": "crew-scheduling",
   "brief": {
     "path": "bets.csv row 8",
-    "sha256": "47c2f92fb60edfe799bc31f24513ae8e65eea6cf54b03deb454d9827e3567cd5"
+    "sha256": "9c318382fb4b080f7594c980ce6ea90074e39e86f3491fb9a167aaf389f457ed"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.0",
+    "tool": "bet-portfolio-review 0.2.1",
     "as_of": "2026-11-26",
     "rank": {
       "value": 4,
@@ -53,8 +53,9 @@
     "gaps": [
       "no-work",
       "date-passed",
-      "never-read"
+      "no-result"
     ],
+    "brief_problems": [],
     "next_step": "Link the work that delivers this bet, or cut the bet."
   }
 }

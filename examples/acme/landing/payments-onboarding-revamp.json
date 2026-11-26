@@ -6,10 +6,10 @@
     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.0",
+    "tool": "bet-portfolio-review 0.2.1",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 1,
+      "value": 3,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -52,6 +52,9 @@
     "decides": "",
     "gaps": [
       "no-brief"
+    ],
+    "brief_problems": [
+      "the project description is empty."
     ],
     "next_step": "Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line."
   }

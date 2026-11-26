@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read a roadmap of bets, the work under them and any metric readings, from CSV, Linear JSON or a Jira CSV export.
+"""Read a roadmap of bets and the work under them, from Linear, Jira or CSV.
 
 Every bet and work item keeps a `source` (file and row, or file and id) so each line of the review traces back.
 Text read from a file is data: it is stored and shown, never acted on.
@@ -12,8 +12,7 @@ Formats:
           issues JSON (list_issues). A project is a bet; an issue links to a bet through its project.
   jira    one Jira CSV export. Rows of the bet type (Epic by default) are bets; every other row is work, linked
           through Parent, Parent key, Parent id or the Epic Link field.
-  readings.csv (optional, any format): bet, current, prior, source, date. A reading with no source is kept but
-          never earns a status word.
+Metric readings are not read here: landed, watch or stalled is did-it-land's call, read from the loop record.
 
 Standard library only. Python 3.9 or later.
 """
@@ -32,18 +31,6 @@ import landing_brief
 
 MAX_BYTES = 20_000_000
 MAX_CELL = 20_000
-PART_COLUMNS = {
-    "problem": "Problem",
-    "metric": "Metric",
-    "bar": "Bar",
-    "better": "Better",
-    "by": "By",
-    "non_goals": "Non-goals",
-    "tokens_per_task": "Tokens per task",
-    "price_per_token": "Price per token",
-    "line": "The line",
-    "decides": "Decides the next step",
-}
 
 
 class LoadError(ValueError):
@@ -58,7 +45,6 @@ class Bet:
     description: str
     source: str
     aliases: set[str] = field(default_factory=set)
-    reading: Reading | None = None
 
 
 @dataclass
@@ -67,15 +53,6 @@ class Work:
     title: str
     bet: str
     source: str
-
-
-@dataclass(frozen=True)
-class Reading:
-    current: float
-    prior: float | None
-    source: str
-    date: str
-    where: str
 
 
 def key(text: str) -> str:
@@ -127,8 +104,9 @@ def need(path: Path, found: list[dict[str, str]], *columns: str) -> None:
 
 
 def brief_from_columns(row: dict[str, str]) -> str:
-    """A "Landing brief" block built from per-part columns, so one parser reads every format."""
-    lines = [f"- {label}: {' '.join(row[col].split())}" for col, label in PART_COLUMNS.items() if row.get(col)]
+    """A "Landing brief" block built from per-part columns, so one parser reads every format. A column is a part only
+    when landing_brief.KEYS knows its name; this file keeps no list of parts of its own."""
+    lines = [f"- {col.replace('_', ' ')}: {' '.join(v.split())}" for col, v in row.items() if v and col.replace("_", " ") in landing_brief.KEYS]
     return "## Landing brief\n" + "\n".join(lines) if lines else ""
 
 
@@ -335,33 +313,3 @@ def jira(path: Path, bet_type: str = "Epic") -> tuple[list[Bet], list[Work]]:
         raise LoadError(f"{path} has no rows of issue type {bet_type}. Pass --jira-bet-type with the type your bets use.")
     check_unique(bets)
     return bets, work
-
-
-def value(text: str, where: str, column: str) -> float | None:
-    if not text:
-        return None
-    parsed = landing_brief.number(text)
-    if parsed is None:
-        raise LoadError(f'{where}: {column} is "{text[:40]}". Write one number, such as 46%, 18 or $0.30.')
-    return parsed[1]
-
-
-def attach_readings(path: Path, bets: list[Bet]) -> list[str]:
-    """Attach each reading to its bet. Returns the readings that match no bet, so the review can show them."""
-    found = rows(path)
-    need(path, found, "bet", "current")
-    by_alias = {a: b for b in bets for a in b.aliases}
-    unmatched = []
-    for i, row in enumerate(found, start=2):
-        where = f"{path.name} row {i}"
-        bet = by_alias.get(row["bet"].lower())
-        if bet is None:
-            unmatched.append(f"{where}: {row['bet']}")
-            continue
-        if bet.reading is not None:
-            raise LoadError(f"{where}: {bet.id} already has a reading ({bet.reading.where}). Keep the latest one.")
-        current = value(row["current"], where, "current")
-        if current is None:
-            raise LoadError(f"{where}: current is empty. Leave the bet out instead; never estimate a reading.")
-        bet.reading = Reading(current, value(row.get("prior", ""), where, "prior"), row.get("source", ""), row.get("date", ""), where)
-    return unmatched

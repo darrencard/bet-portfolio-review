@@ -4,7 +4,7 @@
   "illustrative": true,
   "brief": {
     "path": "bets.csv row 4",
-    "sha256": "0949a494eee7198d5e6b0623a3be4e0e4e36631c93894d154baf06cea8a43718"
+    "sha256": "4494310b26b24104025fabc1f6888403469c25dcd1a75ea1f1fbe5b32fb5cbb7"
   },
   "spec": {
     "tool": "spec-auditor",
@@ -12,5 +12,20 @@
     "gaps": [
       "no rollback plan"
     ]
+  },
+  "landed": {
+    "tool": "did-it-land",
+    "as_of": "2026-11-24",
+    "status": "watch",
+    "current": {
+      "value": 22,
+      "unit": "%",
+      "source": "Product analytics: job_sheet_completed event",
+      "window": {
+        "from": "2026-11-01",
+        "to": "2026-11-24"
+      },
+      "as_of": "2026-11-24"
+    }
   }
 }

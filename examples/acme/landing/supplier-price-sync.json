@@ -3,13 +3,13 @@
   "bet": "supplier-price-sync",
   "brief": {
     "path": "bets.csv row 5",
-    "sha256": "a35d6e3a10a6766ffc99e311e1cc8215ea9b8dd8ffbe15cbaf4886249c02880b"
+    "sha256": "73fc67a3cfbc0f88970d80fad77c3d0a74586c92247c83a11403bc3b1d604aae"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.0",
+    "tool": "bet-portfolio-review 0.2.1",
     "as_of": "2026-11-26",
     "rank": {
-      "value": 3,
+      "value": 2,
       "unit": "rank of 8 bets, 1 needs work first",
       "source": "bets.csv",
       "window": {
@@ -19,7 +19,7 @@
       "as_of": "2026-11-26"
     },
     "brief_score": {
-      "value": 10,
+      "value": 4,
       "unit": "points of 14",
       "source": "bets.csv row 5",
       "window": {
@@ -29,7 +29,7 @@
       "as_of": "2026-11-26"
     },
     "brief_score_percent": {
-      "value": 71,
+      "value": 29,
       "unit": "%",
       "source": "bets.csv row 5",
       "window": {
@@ -49,12 +49,15 @@
       "as_of": "2026-11-26"
     },
     "owner": "Catalogue squad lead",
-    "decides": "Head of Product",
+    "decides": "",
     "gaps": [
-      "no-cost-budget",
-      "no-non-goals",
-      "never-read"
+      "brief-problems"
     ],
-    "next_step": "State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code."
+    "brief_problems": [
+      "non goals is missing or empty.",
+      "tokens per task is missing or empty.",
+      "price per token is missing or empty."
+    ],
+    "next_step": "Fix the brief: non goals is missing or empty."
   }
 }

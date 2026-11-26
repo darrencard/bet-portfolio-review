@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2026-11-26)
+
+- One owner per figure, per the Landing Loop contract. Brief completeness is `landing_brief.parse`'s call, listed in its own words (as spec-auditor does); this skill's own list of brief parts, placeholder list and part weights are gone. Readiness is owner 3, brief 10, linked work 1.
+- landed, watch and stalled print only from the `landed` key; `--readings` and the computed status rule are gone.
+- Cost per task is no longer computed; the review shows the `cost` key or says to run cost-budget-check.
+
 ## 0.2.0 (2026-11-26)
 
 - Landing Loop: writes the `portfolio` key of `landing/<bet-slug>.json` per bet, keeps every other key as found, and shows each bet's loop progress (spec, evals, cost, result).

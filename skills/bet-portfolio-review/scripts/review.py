@@ -9,7 +9,7 @@ and the file fallbacks:
   python3 scripts/review.py --jira export.csv --as-of 2026-11-26                    (Jira's CSV export)
   python3 scripts/review.py --csv bets.csv --work work.csv --as-of 2026-11-26
   python3 scripts/review.py --demo                                                  (the illustrative Acme roadmap)
-Add --readings readings.csv for metric readings (bet, current, prior, source, date) and --title "Q1 roadmap".
+Add --title "Q1 roadmap". Landed, watch or stalled is read from each bet's loop record (did-it-land writes it).
 
 Writes review.md, review.html and review.json to --out (default run/), and the `portfolio` key of each bet's
 Landing Loop record to --landing (default landing/), keeping every other key as found. --no-landing skips the records.
@@ -48,7 +48,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--linear-issues", type=Path, nargs="+", help="with --linear-projects: the connector's list_issues JSON pages")
     ap.add_argument("--include-closed", action="store_true", help="with Linear: keep canceled projects and issues (left out by default)")
     ap.add_argument("--jira-bet-type", default="Epic", help="with --jira: the issue type that holds bets (default Epic)")
-    ap.add_argument("--readings", type=Path, help="readings.csv: bet, current, prior, source, date")
     ap.add_argument("--as-of", help="today, YYYY-MM-DD (required, except with --demo)")
     ap.add_argument("--fail-on", default="", help="comma-separated gaps, such as no-owner,no-metric: exit 2 if any bet has one (for CI)")
     ap.add_argument("--title", default="Roadmap", help="the review's title")
@@ -61,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.demo:
         if not DEMO.is_dir():
             raise SystemExit("review: --demo needs the repository's evals/fixtures/acme folder. Run it from a clone.")
-        args.csv, args.work, args.readings = DEMO / "bets.csv", DEMO / "work.csv", DEMO / "readings.csv"
+        args.csv, args.work = DEMO / "bets.csv", DEMO / "work.csv"
         args.as_of, args.illustrative = args.as_of or "2026-11-26", True
         args.title = "Acme roadmap (illustrative)" if args.title == "Roadmap" else args.title
         if args.landing is None and not args.no_landing:
@@ -94,12 +93,10 @@ def main(argv: list[str] | None = None) -> int:
         else:
             bets, work = load.jira(args.jira, args.jira_bet_type)
             sources = {"bets": args.jira.name, "work": args.jira.name}
-        unmatched: list[str] = []
-        if args.readings:
-            unmatched = load.attach_readings(args.readings, bets)
-            sources["readings"] = args.readings.name
-        pf = score.review(bets, work, args.as_of)
-        existing = loop.collect(landing, pf) if landing else None
+        existing = loop.collect(landing, bets) if landing else None
+        if landing:
+            sources["records"] = f"{landing.name}/*.json"
+        pf = score.review(bets, work, args.as_of, existing)
     except (load.LoadError, ValueError) as e:
         raise SystemExit(f"review: {e}") from None
 
@@ -113,11 +110,9 @@ def main(argv: list[str] | None = None) -> int:
         written = loop.write(landing, pf, sources, existing)
         print(f"review: wrote the portfolio key to {len(written)} loop record(s) in {landing}/.", file=sys.stderr)
 
-    print(f"review: {len(pf.reviews)} bets, {pf.complete} with a complete brief, {len(pf.orphans)} of {pf.work_total} work items linked to no bet.")
+    print(f"review: {len(pf.reviews)} bets, {pf.complete} with a brief that parses, {len(pf.orphans)} of {pf.work_total} work items linked to no bet.")
     for r in pf.reviews[:3]:
         print(f"  {r.rank}. {r.bet.id} {r.points}/{score.TOTAL}: {r.next_step}")
-    for u in unmatched:
-        print(f"review: reading at {u} matches no bet on the roadmap; it was left out.", file=sys.stderr)
     print(f"review: wrote {args.out / 'review.md'}, review.html and review.json.", file=sys.stderr)
     failing = [f"{r.bet.id} ({g})" for r in pf.reviews for g in r.gaps if g in fail_on]
     if failing:

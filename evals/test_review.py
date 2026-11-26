@@ -5,8 +5,9 @@ Usage:
   python3 -m unittest discover -s evals -v
 
 Groups:
-  Brief       each check of the landing brief, and the score it earns
-  Readings    status words only with a sourced reading; the status rule; dates passed
+  Brief       brief completeness is landing_brief.parse's call, reported in its own words
+  Status      landed, watch and stalled printed from the loop record, never computed
+  Cost        cost shown from cost-budget-check's key, never computed
   Orphans     work linked to no bet (the port of Throughline's detectOrphans and orphanMove)
   Ranking     the order of the review and the one next step per bet
   Formats     CSV, Linear JSON and Jira CSV read to the same bets
@@ -75,21 +76,32 @@ def work(bet_ref: str = "B1", wid: str = "W1") -> load.Work:
 
 def acme() -> score.Portfolio:
     bets = load.csv_bets(ACME / "bets.csv")
-    load.attach_readings(ACME / "readings.csv", bets)
-    return score.review(bets, load.csv_work(ACME / "work.csv"), AS_OF)
+    records = loop.collect(ACME / "landing", bets)
+    return score.review(bets, load.csv_work(ACME / "work.csv"), AS_OF, records)
 
 
 def by_id(pf: score.Portfolio) -> dict[str, score.Review]:
     return {r.bet.id: r for r in pf.reviews}
 
 
+def parser_problems(text: str) -> list[str]:
+    try:
+        landing_brief.parse(text)
+    except landing_brief.BriefError as e:
+        return [x.strip() for x in str(e).splitlines()[1:] if x.strip()] or [str(e)]
+    return []
+
+
 class Brief(unittest.TestCase):
+    """Brief completeness is landing_brief.parse's call; this skill reports its words and adds no list of its own."""
+
     def test_full_brief_scores_every_point(self):
         r = score.review_bet(bet(), [work()], AS_OF)
-        self.assertEqual((r.points, r.percent, r.gaps), (score.TOTAL, 100, ["never-read"]))
-        self.assertIsNotNone(r.brief, "a complete brief also passes the strict landing_brief parser")
+        self.assertEqual((r.points, r.percent, r.problems), (score.TOTAL, 100, []))
+        self.assertEqual(r.gaps, ["no-result"])
+        self.assertIsNotNone(r.brief)
 
-    def test_no_brief_fails_every_brief_check(self):
+    def test_no_brief(self):
         r = score.review_bet(bet(description="Just a paragraph."), [work()], AS_OF)
         self.assertEqual(r.gaps, ["no-brief"])
         self.assertEqual(r.points, score.WEIGHTS["owner"] + score.WEIGHTS["linked_work"])
@@ -99,94 +111,76 @@ class Brief(unittest.TestCase):
         self.assertIn("no-owner", r.gaps)
         self.assertEqual(r.points, score.TOTAL - score.WEIGHTS["owner"])
 
-    def test_metric_needs_number_direction_and_date(self):
-        for line, new in (("- Bar: 40%", "- Bar: lots"), ("- Better: higher", "- Better: up"), ("- By: 2026-12-31", "- By: Q4")):
-            with self.subTest(new=new):
-                r = score.review_bet(bet(FULL.replace(line, new)), [work()], AS_OF)
-                self.assertIn("no-metric", r.gaps)
+    def test_problems_are_the_parsers_own_words(self):
+        cases = [
+            FULL.replace("- Bar: 40%", "- Bar: lots"),
+            FULL.replace("- Better: higher", "- Better: up"),
+            FULL.replace("- By: 2026-12-31", "- By: Q4"),
+            FULL.replace("- Non-goals: No pricing advice.\n", ""),
+            FULL.replace("- Price per token: $0.000003\n", ""),
+            FULL.replace("9000", "none").replace("$0.000003", "none"),
+            FULL + "- Mood: optimistic\n",
+        ]
+        for text in cases:
+            with self.subTest(text=text[-60:]):
+                r = score.review_bet(bet(text), [work()], AS_OF)
+                self.assertEqual(r.problems, parser_problems(text))
+                self.assertTrue(r.problems)
+                self.assertIn("brief-problems", r.gaps)
+                self.assertTrue(r.next_step.startswith("Fix the brief: "))
                 self.assertIsNone(r.status)
 
-    def test_non_goals_none_does_not_count(self):
-        r = score.review_bet(bet(FULL.replace("No pricing advice.", "none")), [work()], AS_OF)
-        self.assertIn("no-non-goals", r.gaps)
+    def test_no_keyword_list_of_brief_parts_outside_the_parser(self):
+        for name in ("score.py", "load.py", "render.py", "loop.py", "review.py", "validate.py"):
+            with self.subTest(name=name):
+                text = (SCRIPTS / name).read_text(encoding="utf-8")
+                self.assertNotRegex(text, r"[\"']non_goals[\"']|[\"']tokens_per_task[\"']\s*:|PART_COLUMNS|PLACEHOLDERS")
 
-    def test_cost_budget_needs_both_lines(self):
-        r = score.review_bet(bet(FULL.replace("- Price per token: $0.000003\n", "")), [work()], AS_OF)
-        self.assertIn("no-cost-budget", r.gaps)
-        self.assertIn("price per token", r.details["no-cost-budget"])
-
-    def test_budget_none_only_for_fixed_code(self):
-        none = FULL.replace("9000", "none").replace("$0.000003", "none")
-        self.assertIn("no-cost-budget", score.review_bet(bet(none), [work()], AS_OF).gaps)
-        fixed = none.replace("model call.", "fixed code.")
-        r = score.review_bet(bet(fixed), [work()], AS_OF)
-        self.assertNotIn("no-cost-budget", r.gaps)
-        self.assertIsNone(r.cost_per_task)
-
-    def test_cost_per_task_is_computed(self):
-        r = score.review_bet(bet(), [work()], AS_OF)
-        self.assertAlmostEqual(r.cost_per_task, 9000 * 0.000003)
-        self.assertIn("Cost per task, computed: $0.027.", render.cost_lines(r))
+    def test_vendored_parser_check_matches_spec_auditor_shape(self):
+        # spec-auditor turns each line after the first of BriefError into one finding; so does this skill.
+        r = score.review_bet(bet(FULL.replace("- Metric: Quotes sent within 24 hours\n", "")), [work()], AS_OF)
+        self.assertEqual(r.problems, ["metric is missing or empty."])
 
     def test_acme_gaps(self):
         r = by_id(acme())
         self.assertEqual(r["ACME-B5"].gaps, ["no-brief"])
-        self.assertEqual(r["ACME-B6"].gaps, ["no-owner", "no-metric"])
-        self.assertEqual(r["ACME-B4"].gaps, ["no-cost-budget", "no-non-goals", "never-read"])
-        self.assertEqual(r["ACME-B7"].gaps, ["no-work", "date-passed", "never-read"])
-
-    def test_placeholders_do_not_earn_points(self):
-        for line, new in (("- Metric: Quotes sent within 24 hours", "- Metric: TBD"), ("- Non-goals: No pricing advice.", "- Non-goals: n/a")):
-            with self.subTest(new=new):
-                r = score.review_bet(bet(FULL.replace(line, new)), [work()], AS_OF)
-                self.assertLess(r.points, score.TOTAL)
-
-    def test_never_read_is_flagged_but_costs_no_points(self):
-        r = score.review_bet(bet(), [work()], AS_OF)
-        self.assertIn("never-read", r.gaps)
-        self.assertEqual(r.points, score.TOTAL)
-        self.assertTrue(r.next_step.startswith("Take the first reading"))
+        self.assertEqual(r["ACME-B6"].gaps, ["no-owner", "brief-problems"])
+        self.assertEqual(r["ACME-B6"].problems, ["bar is missing or empty."])
+        self.assertEqual(
+            r["ACME-B4"].problems, ["non goals is missing or empty.", "tokens per task is missing or empty.", "price per token is missing or empty."]
+        )
+        self.assertEqual(r["ACME-B7"].gaps, ["no-work", "date-passed", "no-result"])
 
 
-class Readings(unittest.TestCase):
-    def test_acme_status_words(self):
+class Status(unittest.TestCase):
+    """Landed, watch and stalled are did-it-land's. This skill prints them from the record and never computes one."""
+
+    def test_acme_status_words_come_from_the_records(self):
         r = by_id(acme())
-        self.assertEqual(r["ACME-B1"].status, "landed")
-        self.assertEqual(r["ACME-B2"].status, "stalled", "18 days against a bar of 14, lower is better, worse than 17")
-        self.assertEqual(r["ACME-B3"].status, "watch", "no prior reading is watch, per the status rule")
-        self.assertIn("reading-no-history", r["ACME-B3"].gaps)
+        self.assertEqual((r["ACME-B1"].status, r["ACME-B2"].status, r["ACME-B3"].status), ("landed", "stalled", "watch"))
+        self.assertIsNone(r["ACME-B8"].status, "no record, no status word")
 
-    def test_reading_without_source_earns_no_status(self):
-        r = by_id(acme())["ACME-B8"]
-        self.assertIsNone(r.status)
-        self.assertIn("reading-no-source", r.gaps)
-        self.assertNotRegex(render.status_text(r), r"\b(landed|watch|stalled)\b")
+    def test_no_status_without_a_record(self):
+        self.assertIsNone(score.review_bet(bet(), [work()], AS_OF).status)
 
-    def test_reading_without_metric_earns_no_status(self):
-        b = bet(FULL.replace("- Bar: 40%\n", ""))
-        b.reading = load.Reading(50.0, 40.0, "analytics", "2026-11-20", "test")
-        self.assertIsNone(score.review_bet(b, [work()], AS_OF).status)
+    def test_record_status_is_printed_as_written(self):
+        for word in ("landed", "watch", "stalled"):
+            r = score.review_bet(bet(), [work()], AS_OF, {"landed": {"status": word}})
+            self.assertEqual(r.status, word)
+
+    def test_unknown_word_is_not_printed(self):
+        self.assertIsNone(score.review_bet(bet(), [work()], AS_OF, {"landed": {"status": "shipped"}}).status)
+
+    def test_no_status_rule_in_this_skills_code(self):
+        for name in ("score.py", "render.py", "loop.py", "review.py"):
+            self.assertNotIn("status_for", (SCRIPTS / name).read_text(encoding="utf-8"), name)
 
     def test_date_passed(self):
-        b = bet(FULL.replace("2026-12-31", "2026-11-01"))
-        r = score.review_bet(b, [work()], AS_OF)
+        early = FULL.replace("2026-12-31", "2026-11-01")
+        r = score.review_bet(bet(early), [work()], AS_OF)
         self.assertIn("date-passed", r.gaps)
         self.assertIn("has passed", r.next_step)
-        b.reading = load.Reading(45.0, 30.0, "analytics", "2026-11-20", "test")
-        self.assertNotIn("date-passed", score.review_bet(b, [work()], AS_OF).gaps, "a landed bet is not late")
-
-    def test_bad_reading_refused(self):
-        with tempfile.TemporaryDirectory() as d:
-            path = Path(d) / "r.csv"
-            path.write_text("bet,current\nACME-B1,about half\n", encoding="utf-8")
-            with self.assertRaisesRegex(load.LoadError, "row 2"):
-                load.attach_readings(path, load.csv_bets(ACME / "bets.csv"))
-
-    def test_unmatched_reading_is_reported(self):
-        with tempfile.TemporaryDirectory() as d:
-            path = Path(d) / "r.csv"
-            path.write_text("bet,current\nACME-B99,4\n", encoding="utf-8")
-            self.assertEqual(load.attach_readings(path, load.csv_bets(ACME / "bets.csv")), ["r.csv row 2: ACME-B99"])
+        self.assertNotIn("date-passed", score.review_bet(bet(early), [work()], AS_OF, {"landed": {"status": "landed"}}).gaps)
 
 
 class Orphans(unittest.TestCase):
@@ -196,9 +190,8 @@ class Orphans(unittest.TestCase):
         self.assertIn("ACME-B9", pf.orphans[2].why)
         self.assertEqual(pf.work_total, 19)
         self.assertEqual(pf.linked_percent, round(100 * 16 / 19))
-        # B1, B2, B3, B4 (3+3+3+2) and B7 (0) and B8 (2) have a definition of good; B5 and B6 do not.
-        self.assertEqual(pf.judged_work, 13)
-        self.assertEqual(pf.judged_percent, round(100 * 13 / 19))
+        # B1, B2, B3 (3 each), B7 (0) and B8 (2) have a brief that parses.
+        self.assertEqual(pf.judged_work, 11)
 
     def test_link_by_name(self):
         self.assertEqual(len(by_id(acme())["ACME-B5"].work), 2, "one item links by id, one by the bet's name")
@@ -212,19 +205,16 @@ class Orphans(unittest.TestCase):
 class Ranking(unittest.TestCase):
     def test_acme_order(self):
         order = [r.bet.id for r in acme().reviews]
-        self.assertEqual(order, ["ACME-B5", "ACME-B6", "ACME-B4", "ACME-B7", "ACME-B2", "ACME-B8", "ACME-B3", "ACME-B1"])
+        self.assertEqual(order, ["ACME-B6", "ACME-B4", "ACME-B5", "ACME-B7", "ACME-B2", "ACME-B8", "ACME-B3", "ACME-B1"])
 
     def test_stalled_before_landed_at_equal_score(self):
         a, b = bet(bid="A", name="a"), bet(bid="B", name="b")
-        a.reading = load.Reading(45.0, 30.0, "x", "", "t")
-        b.reading = load.Reading(20.0, 30.0, "x", "", "t")
-        pf = score.review([a, b], [work("A"), work("B", "W2")], AS_OF)
+        records = {"A": {"landed": {"status": "landed"}}, "B": {"landed": {"status": "stalled"}}}
+        pf = score.review([a, b], [work("A"), work("B", "W2")], AS_OF, records)
         self.assertEqual([r.status for r in pf.reviews], ["stalled", "landed"])
 
     def test_landed_bet_without_work_is_recorded_not_cut(self):
-        b = bet()
-        b.reading = load.Reading(45.0, 30.0, "analytics", "2026-11-20", "t")
-        r = score.review_bet(b, [], AS_OF)
+        r = score.review_bet(bet(), [], AS_OF, {"landed": {"status": "landed"}})
         self.assertIn("no-work", r.gaps)
         self.assertTrue(r.next_step.startswith("Record it as landed"))
 
@@ -233,7 +223,23 @@ class Ranking(unittest.TestCase):
         self.assertTrue(steps["ACME-B6"].startswith("Name one owner"))
         self.assertTrue(steps["ACME-B5"].startswith("Payments squad lead writes the landing brief"))
         self.assertTrue(steps["ACME-B2"].startswith("Head of Product decides"))
-        self.assertTrue(all(s.endswith(".") for s in steps.values()))
+        self.assertTrue(steps["ACME-B8"].startswith("Run did-it-land"))
+
+
+class Cost(unittest.TestCase):
+    """Cost per task is cost-budget-check's figure: shown from the `cost` key, never computed here."""
+
+    def test_no_cost_key_says_so_and_prints_no_figure(self):
+        r = score.review_bet(bet(), [work()], AS_OF)
+        self.assertEqual(render.cost_lines(r), ["Cost: not checked. Run cost-budget-check."])
+
+    def test_cost_key_is_printed_as_written(self):
+        record = json.loads((ACME / "landing" / "quote-drafting-assistant.json").read_text(encoding="utf-8"))
+        r = score.review_bet(bet(), [work()], AS_OF, record)
+        line = render.cost_lines(r)[0]
+        self.assertIn("tokens per task 8,400 tokens", line)
+        self.assertIn("price per token 0.000003 USD", line)
+        self.assertNotIn("0.027", line, "no product of the two is computed")
 
 
 class Formats(unittest.TestCase):
@@ -241,8 +247,8 @@ class Formats(unittest.TestCase):
         bets = load.linear_bets([ACME / "linear-projects.json"])
         pf = score.review(bets, load.linear_work([ACME / "linear-issues.json"]), AS_OF)
         r = by_id(pf)
-        self.assertEqual(r["proj-quotes"].gaps, ["never-read"])
-        self.assertEqual(r["proj-chasing"].gaps, ["no-cost-budget", "no-non-goals", "never-read"])
+        self.assertEqual(r["proj-quotes"].gaps, ["no-result"])
+        self.assertEqual(r["proj-chasing"].gaps, ["brief-problems"])
         self.assertEqual(r["proj-directory"].gaps, ["no-owner", "no-brief", "no-work"])
         self.assertEqual([o.work.id for o in pf.orphans], ["ACM-4"])
 
@@ -254,7 +260,7 @@ class Formats(unittest.TestCase):
         bets, items = load.jira(ACME / "jira-export.csv")
         pf = score.review(bets, items, AS_OF)
         r = by_id(pf)
-        self.assertEqual(r["ACME-1"].gaps, ["never-read"], "a multi-line Description cell holds the brief")
+        self.assertEqual(r["ACME-1"].gaps, ["no-result"], "a multi-line Description cell holds the brief")
         self.assertEqual(len(r["ACME-1"].work), 2, "linked by Parent key and by Parent issue id")
         self.assertEqual(r["ACME-2"].gaps, ["no-brief"])
         self.assertEqual([o.work.id for o in pf.orphans], ["ACME-14"])
@@ -263,7 +269,7 @@ class Formats(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "b.csv"
             path.write_text('id,name,owner,description\nB1,Quotes,Lead,"' + FULL + '"\n', encoding="utf-8")
-            self.assertEqual(score.review_bet(load.csv_bets(path)[0], [work()], AS_OF).gaps, ["never-read"])
+            self.assertEqual(score.review_bet(load.csv_bets(path)[0], [work()], AS_OF).gaps, ["no-result"])
 
     def test_refusals(self):
         with tempfile.TemporaryDirectory() as d:
@@ -283,7 +289,7 @@ class Formats(unittest.TestCase):
 
 class Output(unittest.TestCase):
     def run_cli(self, out: Path, *extra: str) -> None:
-        argv = ["--csv", str(ACME / "bets.csv"), "--work", str(ACME / "work.csv"), "--readings", str(ACME / "readings.csv")]
+        argv = ["--csv", str(ACME / "bets.csv"), "--work", str(ACME / "work.csv"), "--landing", str(out / "landing")]
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             review.main([*argv, "--as-of", AS_OF, "--out", str(out), "--illustrative", *extra])
 
@@ -303,15 +309,19 @@ class Output(unittest.TestCase):
             argv = ["--demo", "--out", d]
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(review.main([*argv, "--fail-on", "no-owner"]), 2)
-                self.assertEqual(review.main([*argv, "--fail-on", "no-line"]), 0)
+                self.assertEqual(review.main([*argv, "--fail-on", "no-owner,brief-problems"]), 2)
+                self.assertEqual(review.main([*argv, "--fail-on", "no-result"]), 2)
                 with self.assertRaises(SystemExit):
                     review.main([*argv, "--fail-on", "no-such-gap"])
+            clean = ["--csv", str(ACME / "bets.csv"), "--as-of", AS_OF, "--out", d, "--no-landing", "--fail-on", "no-such-gap"]
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                review.main(clean)
 
     def test_do_these_first(self):
         md = render.to_markdown(acme(), "t", {}, False)
         head = md.split("## Ranked review")[0]
         self.assertIn("## Do these first", head)
-        self.assertIn("1. **Payments onboarding revamp (ACME-B5):**", head)
+        self.assertIn("1. **Trade directory listing (ACME-B6):**", head)
 
     def test_checked_in_example_is_current(self):
         with tempfile.TemporaryDirectory() as d:
@@ -360,10 +370,10 @@ class Claims(unittest.TestCase):
         self.assertTrue(any("figure-not-computed: 3,217" in e for e in errors))
 
     def test_figure_moved_to_another_bet(self):
-        # 43% is ACME-B1's reading; printing it on ACME-B2's row is refused even though 43 appears in the review.
+        # 40% is ACME-B1's bar; printing it on ACME-B2's row is refused even though 40 appears in the review.
         old = "| Invoice chasing (ACME-B2) | Payments squad lead |"
-        edited = self.md.replace(old, "| Invoice chasing (ACME-B2), now at 43% | Payments squad lead |")
-        self.assertIn("43", self.data["figures"])
+        edited = self.md.replace(old, "| Invoice chasing (ACME-B2), now at 40% | Payments squad lead |")
+        self.assertIn("40", self.data["figures"])
         self.assertTrue(any("not one of ACME-B2's computed figures" in e for e in validate.check(edited, self.data)))
 
     def test_changed_status(self):
@@ -392,7 +402,7 @@ class LiveFormats(unittest.TestCase):
             path.write_text('Name,Status,Lead,Description\nQuotes,started,Quotes squad lead,"' + FULL + '"\n', encoding="utf-8")
             bets = load.linear_bets([path])
             self.assertEqual((bets[0].id, bets[0].owner), ("Quotes", "Quotes squad lead"))
-            self.assertEqual(score.review_bet(bets[0], [work("Quotes")], AS_OF).gaps, ["never-read"])
+            self.assertEqual(score.review_bet(bets[0], [work("Quotes")], AS_OF).gaps, ["no-result"])
 
     def test_linear_issue_pages_overlap_once(self):
         items = load.linear_work([ACME / "linear-issues.json", ACME / "linear-issues.json"])
@@ -430,7 +440,7 @@ class LiveFormats(unittest.TestCase):
             path.write_text(json.dumps(page), encoding="utf-8")
             bets, items = load.jira_search([path])
         pf = score.review(bets, items, AS_OF)
-        self.assertEqual(pf.reviews[0].gaps, ["never-read"], "the brief is read from Atlassian Document Format")
+        self.assertEqual(pf.reviews[0].gaps, ["no-result"], "the brief is read from Atlassian Document Format")
         self.assertEqual([o.work.id for o in pf.orphans], ["Q-3"])
 
     def test_vendored_refusal_becomes_load_error(self):
@@ -443,7 +453,7 @@ class LiveFormats(unittest.TestCase):
 
 class Loop(unittest.TestCase):
     def run_cli(self, landing: Path, out: Path) -> int:
-        argv = ["--csv", str(ACME / "bets.csv"), "--work", str(ACME / "work.csv"), "--readings", str(ACME / "readings.csv")]
+        argv = ["--csv", str(ACME / "bets.csv"), "--work", str(ACME / "work.csv")]
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return review.main([*argv, "--as-of", AS_OF, "--out", str(out), "--landing", str(landing)])
 
@@ -468,12 +478,13 @@ class Loop(unittest.TestCase):
             self.assertEqual((record["schema"], record["bet"]), ("landing-loop/1", "quote-drafting-assistant"))
             self.assertEqual(len(record["brief"]["sha256"]), 64)
             figures = [v for v in record["portfolio"].values() if isinstance(v, dict)]
-            self.assertGreaterEqual(len(figures), 5)
+            self.assertEqual(len(figures), 4, "rank, readiness, readiness percent, linked work")
             for f in figures:
                 self.assertEqual(set(f), {"value", "unit", "source", "window", "as_of"})
                 self.assertTrue(f["source"])
                 self.assertEqual(set(f["window"]), {"from", "to"})
-            self.assertAlmostEqual(record["portfolio"]["cost_per_task_budget"]["value"], 0.027)
+            self.assertNotIn("cost_per_task_budget", record["portfolio"], "cost per task belongs to cost-budget-check")
+            self.assertEqual(record["portfolio"]["brief_problems"], [])
             self.assertNotIn("status", record["portfolio"], "landed.status belongs to did-it-land")
 
     def test_changed_brief_is_noted_not_overwritten(self):

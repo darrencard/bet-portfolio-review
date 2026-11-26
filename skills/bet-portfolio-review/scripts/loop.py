@@ -21,26 +21,22 @@ import re
 from pathlib import Path
 from typing import Any
 
-from load import LoadError
-from score import TOTAL, Portfolio, Review
+from load import Bet, LoadError
+from score import STATUS_WORDS, TOTAL, Portfolio, Review
 
 SCHEMA = "landing-loop/1"
-TOOL = "bet-portfolio-review 0.2.0"
+TOOL = "bet-portfolio-review 0.2.1"
 STEPS = ("spec", "evals", "cost", "landed")
-STATUS_WORDS = ("landed", "watch", "stalled")
 
 
 def slug(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:80] or "bet"
 
 
-def slugs(reviews: list[Review]) -> dict[str, str]:
+def slugs(bets: list[Bet]) -> dict[str, str]:
     """One file name per bet. A name two bets share gets the bet id added."""
-    names = [slug(r.bet.name) for r in reviews]
-    out = {}
-    for r, name in zip(reviews, names):
-        out[r.bet.id] = name if names.count(name) == 1 else f"{name}-{slug(r.bet.id)}"
-    return out
+    names = [slug(b.name) for b in bets]
+    return {b.id: name if names.count(name) == 1 else f"{name}-{slug(b.id)}" for b, name in zip(bets, names)}
 
 
 def read(path: Path) -> dict[str, Any] | None:
@@ -61,7 +57,7 @@ def progress(record: dict[str, Any] | None) -> dict[str, Any]:
     out: dict[str, Any] = {k: isinstance(record.get(k), dict) and bool(record.get(k)) for k in STEPS}
     landed = record.get("landed")
     word = landed.get("status") if isinstance(landed, dict) else None
-    out["landed_status"] = word if word in STATUS_WORDS else None
+    out["landed_status"] = word if word in STATUS_WORDS else None  # printed, never computed
     return out
 
 
@@ -88,28 +84,27 @@ def portfolio_key(r: Review, pf: Portfolio, sources: dict[str, str], note: str =
         "brief_score_percent": figure(r.percent, "%", r.bet.source, pf.as_of),
         "linked_work": figure(len(r.work), "work items", work_src, pf.as_of),
         "owner": r.bet.owner,
-        "decides": r.parts.get("decides", ""),
+        "decides": r.brief.decides if r.brief else "",
         "gaps": r.gaps,
+        # landing_brief.parse's own words, so they match spec-auditor's brief findings exactly.
+        "brief_problems": r.problems,
         "next_step": r.next_step,
     }
-    if r.cost_per_task is not None:
-        unit = "USD per task" if r.parts.get("price_per_token", "").strip().startswith("$") else "per task"
-        key["cost_per_task_budget"] = figure(r.cost_per_task, unit, f"{r.bet.source}: tokens per task x price per token", pf.as_of)
     if note:
         key["note"] = note
     return key
 
 
-def collect(folder: Path, pf: Portfolio) -> dict[str, dict[str, Any] | None]:
+def collect(folder: Path, bets: list[Bet]) -> dict[str, dict[str, Any] | None]:
     """The records that already exist, by bet id. Read before anything is written."""
-    names = slugs(pf.reviews)
-    return {r.bet.id: read(folder / f"{names[r.bet.id]}.json") for r in pf.reviews}
+    names = slugs(bets)
+    return {b.id: read(folder / f"{names[b.id]}.json") for b in bets}
 
 
 def write(folder: Path, pf: Portfolio, sources: dict[str, str], existing: dict[str, dict[str, Any] | None]) -> list[Path]:
     """Write the portfolio key into each bet's record. Every other key stays exactly as it was."""
     folder.mkdir(parents=True, exist_ok=True)
-    names = slugs(pf.reviews)
+    names = slugs([r.bet for r in pf.reviews])
     written = []
     for r in pf.reviews:
         path = folder / f"{names[r.bet.id]}.json"

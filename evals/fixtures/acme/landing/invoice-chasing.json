@@ -4,7 +4,7 @@
   "illustrative": true,
   "brief": {
     "path": "bets.csv row 3",
-    "sha256": "dbad580d9c1de3bf09a9304336be67a8f412c3d1f1d761bb7df1622ea6ecb141"
+    "sha256": "5cfa55e3c2d398ace8836cc09eee107c284f3c3afe087786ef0450af18003a8c"
   },
   "spec": {
     "tool": "spec-auditor",

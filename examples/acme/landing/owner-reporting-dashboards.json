@@ -3,10 +3,10 @@
   "bet": "owner-reporting-dashboards",
   "brief": {
     "path": "bets.csv row 9",
-    "sha256": "388a96a8c52b668a265bf9b7b72e388af5dfb9ec210ff1e6fc2109a58e7471cc"
+    "sha256": "7050a7578c6d5a18428bdcb6fb0d3e4c01549760179d8e25c89c0594118f4967"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.0",
+    "tool": "bet-portfolio-review 0.2.1",
     "as_of": "2026-11-26",
     "rank": {
       "value": 6,
@@ -51,18 +51,9 @@
     "owner": "Insights squad lead",
     "decides": "Head of Product",
     "gaps": [
-      "reading-no-source"
+      "no-result"
     ],
-    "next_step": "Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word.",
-    "cost_per_task_budget": {
-      "value": 0.012,
-      "unit": "USD per task",
-      "source": "bets.csv row 9: tokens per task x price per token",
-      "window": {
-        "from": "2026-11-26",
-        "to": "2026-11-26"
-      },
-      "as_of": "2026-11-26"
-    }
+    "brief_problems": [],
+    "next_step": "Run did-it-land on Weekly active owners viewing reports once it has a reading from its source."
   }
 }

@@ -4,7 +4,7 @@
   "sources": {
     "bets": "bets.csv",
     "work": "work.csv",
-    "readings": "readings.csv"
+    "records": "landing/*.json"
   },
   "total_points": 14,
   "portfolio": {
@@ -12,9 +12,9 @@
       "value": "8",
       "computed_from": "bets.csv"
     },
-    "Bets with a complete brief": {
+    "Bets whose brief parses (landing_brief.py)": {
       "value": "5",
-      "computed_from": "bets.csv, work.csv"
+      "computed_from": "bets.csv"
     },
     "Work items": {
       "value": "19",
@@ -28,45 +28,97 @@
       "value": "84%",
       "computed_from": "bets.csv, work.csv"
     },
-    "Share of work under a bet with a definition of good": {
-      "value": "68%",
+    "Share of work under a bet whose brief parses": {
+      "value": "58%",
       "computed_from": "bets.csv, work.csv"
     },
     "Bets landed": {
       "value": "1",
-      "computed_from": "bets.csv, readings.csv"
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
     },
     "Bets watch": {
       "value": "1",
-      "computed_from": "bets.csv, readings.csv"
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
     },
     "Bets stalled": {
       "value": "1",
-      "computed_from": "bets.csv, readings.csv"
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
     },
-    "Bets with no status word": {
+    "Bets with no result yet": {
       "value": "5",
-      "computed_from": "bets.csv, readings.csv"
+      "computed_from": "landing/*.json (landed.status, written by did-it-land)"
     }
   },
   "gap_counts": {
     "no-owner": 1,
     "no-brief": 1,
-    "no-metric": 1,
-    "no-cost-budget": 1,
-    "no-non-goals": 1,
-    "no-problem": 0,
-    "no-line": 0,
-    "no-decider": 0,
+    "brief-problems": 2,
     "no-work": 1,
-    "reading-no-source": 1,
-    "reading-no-history": 1,
     "date-passed": 1,
-    "never-read": 2
+    "no-result": 2
   },
   "bets": [
     {
       "rank": 1,
+      "id": "ACME-B6",
+      "name": "Trade directory listing",
+      "owner": "",
+      "source": "bets.csv row 7",
+      "points": 1,
+      "percent": 7,
+      "gaps": [
+        "no-owner",
+        "brief-problems"
+      ],
+      "status": null,
+      "brief_problems": [
+        "bar is missing or empty."
+      ],
+      "linked_work": [
+        "ACME-150"
+      ],
+      "next_step": "Name one owner for this bet.",
+      "loop": null,
+      "figures": [
+        "1",
+        "14",
+        "6",
+        "7"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "ACME-B4",
+      "name": "Supplier price sync",
+      "owner": "Catalogue squad lead",
+      "source": "bets.csv row 5",
+      "points": 4,
+      "percent": 29,
+      "gaps": [
+        "brief-problems"
+      ],
+      "status": null,
+      "brief_problems": [
+        "non goals is missing or empty.",
+        "tokens per task is missing or empty.",
+        "price per token is missing or empty."
+      ],
+      "linked_work": [
+        "ACME-130",
+        "ACME-131"
+      ],
+      "next_step": "Fix the brief: non goals is missing or empty.",
+      "loop": null,
+      "figures": [
+        "14",
+        "2",
+        "29",
+        "4",
+        "5"
+      ]
+    },
+    {
+      "rank": 3,
       "id": "ACME-B5",
       "name": "Payments onboarding revamp",
       "owner": "Payments squad lead",
@@ -77,7 +129,9 @@
         "no-brief"
       ],
       "status": null,
-      "cost_per_task": null,
+      "brief_problems": [
+        "the project description is empty."
+      ],
       "linked_work": [
         "ACME-140",
         "ACME-141"
@@ -85,77 +139,13 @@
       "next_step": "Payments squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.",
       "loop": null,
       "figures": [
-        "1",
         "14",
         "2",
         "29",
+        "3",
         "4",
         "5",
         "6"
-      ]
-    },
-    {
-      "rank": 2,
-      "id": "ACME-B6",
-      "name": "Trade directory listing",
-      "owner": "",
-      "source": "bets.csv row 7",
-      "points": 8,
-      "percent": 57,
-      "gaps": [
-        "no-owner",
-        "no-metric"
-      ],
-      "status": null,
-      "cost_per_task": null,
-      "linked_work": [
-        "ACME-150"
-      ],
-      "next_step": "Name one owner for this bet.",
-      "loop": null,
-      "figures": [
-        "1",
-        "14",
-        "2",
-        "57",
-        "6",
-        "7",
-        "8"
-      ]
-    },
-    {
-      "rank": 3,
-      "id": "ACME-B4",
-      "name": "Supplier price sync",
-      "owner": "Catalogue squad lead",
-      "source": "bets.csv row 5",
-      "points": 10,
-      "percent": 71,
-      "gaps": [
-        "no-cost-budget",
-        "no-non-goals",
-        "never-read"
-      ],
-      "status": null,
-      "cost_per_task": null,
-      "linked_work": [
-        "ACME-130",
-        "ACME-131"
-      ],
-      "next_step": "State the cost budget as two lines, tokens per task and price per token, or mark the line fixed code.",
-      "loop": null,
-      "figures": [
-        "02",
-        "10",
-        "14",
-        "2",
-        "2027",
-        "28",
-        "3",
-        "30",
-        "4",
-        "5",
-        "71"
       ]
     },
     {
@@ -169,10 +159,10 @@
       "gaps": [
         "no-work",
         "date-passed",
-        "never-read"
+        "no-result"
       ],
       "status": null,
-      "cost_per_task": null,
+      "brief_problems": [],
       "linked_work": [],
       "next_step": "Link the work that delivers this bet, or cut the bet.",
       "loop": null,
@@ -200,7 +190,7 @@
       "percent": 100,
       "gaps": [],
       "status": "stalled",
-      "cost_per_task": 0.018000000000000002,
+      "brief_problems": [],
       "linked_work": [
         "ACME-110",
         "ACME-111",
@@ -215,22 +205,15 @@
         "landed_status": "stalled"
       },
       "figures": [
-        "0.000003",
-        "0.018",
         "100",
-        "11",
         "12",
         "14",
         "14,",
         "15",
-        "17",
-        "18",
         "2",
         "2026",
-        "24",
         "3",
-        "5",
-        "6000"
+        "5"
       ]
     },
     {
@@ -242,33 +225,24 @@
       "points": 14,
       "percent": 100,
       "gaps": [
-        "reading-no-source"
+        "no-result"
       ],
       "status": null,
-      "cost_per_task": 0.012,
+      "brief_problems": [],
       "linked_work": [
         "ACME-170",
         "ACME-171"
       ],
-      "next_step": "Name the source of the Weekly active owners viewing reports reading. Until then it earns no status word.",
+      "next_step": "Run did-it-land on Weekly active owners viewing reports once it has a reading from its source.",
       "loop": null,
       "figures": [
-        "0.000003",
-        "0.012",
         "01",
         "100",
-        "11",
         "14",
         "15",
         "2",
-        "2026",
         "2027",
-        "24",
-        "28",
-        "31",
         "35",
-        "4000",
-        "5",
         "6",
         "8",
         "9"
@@ -282,11 +256,9 @@
       "source": "bets.csv row 4",
       "points": 14,
       "percent": 100,
-      "gaps": [
-        "reading-no-history"
-      ],
+      "gaps": [],
       "status": "watch",
-      "cost_per_task": null,
+      "brief_problems": [],
       "linked_work": [
         "ACME-120",
         "ACME-121",
@@ -297,18 +269,14 @@
         "spec": true,
         "evals": false,
         "cost": false,
-        "landed": false,
-        "landed_status": null
+        "landed": true,
+        "landed_status": "watch"
       },
       "figures": [
         "01",
         "100",
-        "11",
         "14",
-        "2026",
         "2027",
-        "22",
-        "24",
         "3",
         "31",
         "4",
@@ -326,7 +294,7 @@
       "percent": 100,
       "gaps": [],
       "status": "landed",
-      "cost_per_task": 0.027,
+      "brief_problems": [],
       "linked_work": [
         "ACME-101",
         "ACME-102",
@@ -342,10 +310,8 @@
       },
       "figures": [
         "0.000003",
-        "0.027",
         "1",
         "100",
-        "11",
         "12",
         "14",
         "2",
@@ -353,11 +319,9 @@
         "24",
         "3",
         "31",
-        "36",
         "40",
-        "43",
         "8",
-        "9000"
+        "8,400"
       ]
     }
   ],
@@ -381,11 +345,7 @@
   "figures": [
     "0",
     "0.000003",
-    "0.012",
-    "0.018",
-    "0.027",
     "01",
-    "02",
     "1",
     "10",
     "100",
@@ -395,7 +355,6 @@
     "14",
     "14,",
     "15",
-    "17",
     "18",
     "180",
     "181",
@@ -406,33 +365,24 @@
     "20",
     "2026",
     "2027",
-    "22",
     "24",
     "26",
-    "28",
     "29",
     "3",
-    "30",
     "31",
     "35",
-    "36",
     "4",
     "40",
-    "4000",
-    "43",
     "5",
-    "57",
+    "58",
     "6",
     "60",
-    "6000",
-    "68",
     "7",
-    "71",
     "8",
+    "8,400",
     "84",
     "9",
     "9,",
-    "9000",
     "93"
   ]
 }

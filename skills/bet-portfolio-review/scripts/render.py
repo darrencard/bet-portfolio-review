@@ -13,13 +13,13 @@ Standard library only. Python 3.9 or later.
 
 from __future__ import annotations
 
+import decimal
 import html
 import json
 import re
 from pathlib import Path
 from typing import Any
 
-import landing_brief
 from loop import progress_text
 from score import LABELS, TOTAL, Portfolio, Review, orphan_move
 
@@ -36,55 +36,48 @@ def md(text: str, limit: int = 300) -> str:
     return text.replace("\\", "\\\\").replace("|", "\\|").replace("<", "&lt;").replace(">", "&gt;").replace("`", "'")
 
 
-def fmt(value: float, prefix: str = "", unit: str = "") -> str:
-    return f"{prefix}{value:,.6g}{unit}"
-
-
 def linked_line(pf: Portfolio) -> str:
     if not pf.work_total:
         return "No work items were given."
-    return f"{pf.linked_percent}% of {pf.work_total} work items link to a bet; {pf.judged_percent}% sit under a bet with a definition of good."
+    return f"{pf.linked_percent}% of {pf.work_total} work items link to a bet; {pf.judged_percent}% sit under a bet whose brief parses."
 
 
 def status_text(r: Review) -> str:
-    if r.status:
-        return r.status
-    if r.bet.reading is not None:
-        return "no status word: the reading has no source" if r.passed["metric"] else "no status word: no definition of good"
-    return "no reading"
+    """The status did-it-land wrote into the loop record, printed as is. Never computed here."""
+    return r.status or "no result yet"
 
 
 def gap_list(r: Review) -> str:
     return "; ".join(LABELS[g] for g in r.gaps) or "None"
 
 
+def figure_text(f: Any) -> str:
+    if not isinstance(f, dict) or "value" not in f:
+        return "not given"
+    v = f["value"]
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        value = str(v)
+    else:
+        whole, _, frac = format(decimal.Decimal(str(v)), "f").partition(".")
+        value = f"{int(whole):,}" + (f".{frac}" if frac.strip("0") else "")
+    return f"{value} {f.get('unit', '')}".strip()
+
+
 def cost_lines(r: Review) -> list[str]:
-    p = r.parts
-    if not r.passed["cost_budget"]:
-        return ["Cost budget: missing."]
-    if r.cost_per_task is None:
-        return ["Tokens per task: none.", "Price per token: none (the line is fixed code)."]
-    price = landing_brief.number(p["price_per_token"])
-    assert price is not None  # noqa: S101  (the cost check passed)
-    return [
-        f"Tokens per task: {md(p['tokens_per_task'])}.",
-        f"Price per token: {md(p['price_per_token'])}.",
-        f"Cost per task, computed: {fmt(r.cost_per_task, price[0])}.",
-    ]
+    """Cost per task is cost-budget-check's figure. Shown from its `cost` key, never computed here."""
+    cost = (r.record or {}).get("cost")
+    if not isinstance(cost, dict) or not cost:
+        return ["Cost: not checked. Run cost-budget-check."]
+    tokens, price = cost.get("tokens_per_task"), cost.get("price_per_token")
+    src = md(str(tokens.get("source", ""))) if isinstance(tokens, dict) else ""
+    tail = f" (source: {src})." if src else "."
+    return [f"Cost, from cost-budget-check: tokens per task {md(figure_text(tokens))}; price per token {md(figure_text(price))}{tail}"]
 
 
-def reading_line(r: Review) -> str:
-    reading = r.bet.reading
-    if reading is None:
-        return "Reading: none recorded."
-    if not r.passed["metric"]:
-        return f"Reading: {fmt(reading.current)} recorded ({md(reading.where)}), but there is no definition of good to read it against."
-    bar = landing_brief.number(r.parts["bar"])
-    assert bar is not None  # noqa: S101
-    prior = f"; prior {fmt(reading.prior, bar[0], bar[2])}" if reading.prior is not None else "; no prior reading"
-    src = f"source: {md(reading.source)}" if reading.source else "no source named"
-    when = f" on {md(reading.date)}" if reading.date else ""
-    return f"Reading: {md(r.parts['metric'])} is {fmt(reading.current, bar[0], bar[2])}{when}{prior} ({src}; {md(reading.where)})."
+def definition(r: Review) -> str:
+    b = r.brief
+    assert b is not None  # noqa: S101
+    return f"{md(b.metric)}, bar {md(b.bar_text)}, {'higher' if b.higher_is_better else 'lower'} is better, by {md(b.by)}"
 
 
 def loop_cell(r: Review, loop: dict[str, Progress | None] | None) -> str:
@@ -97,9 +90,9 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
     if illustrative:
         out += [f"> **{ILLUSTRATIVE}**", ""]
     out += [
-        f"As of {pf.as_of}. {n} bets; {pf.complete} have a complete brief. {linked_line(pf)}",
+        f"As of {pf.as_of}. {n} bets; {pf.complete} have a brief that parses. {linked_line(pf)}",
         "",
-        "Status words print only where a reading with a named source exists: landed, watch or stalled. A metric moving is not proof that the bet moved it.",
+        "Status words (landed, watch, stalled) are did-it-land's, read from each bet's loop record. A metric moving is not proof that the bet moved it.",
         "",
         "## Do these first",
         "",
@@ -107,9 +100,9 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         "",
         "## Ranked review",
         "",
-        "Rank 1 needs work first. Loop shows which Landing Loop steps the bet's record holds.",
+        "Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop shows which Landing Loop steps the bet's record holds.",
         "",
-        "| Rank | Bet | Owner | Brief score | Gaps | Status | Loop | Next step |",
+        "| Rank | Bet | Owner | Readiness | Gaps | Result | Loop | Next step |",
         "|---|---|---|---|---|---|---|---|",
     ]
     for r in pf.reviews:
@@ -119,20 +112,17 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         )
     out += ["", "## Each bet", ""]
     for r in pf.reviews:
-        p = r.parts
         out += [f"### {r.rank}. {md(r.bet.name)} ({md(r.bet.id)})", ""]
         out.append(f"- Source: {md(r.bet.source)}.")
-        out.append(f"- Owner: {md(r.bet.owner) or 'none'}. Decides the next step: {md(p.get('decides', '')) or 'none named'}.")
-        out.append(f"- Brief score: {r.points} of {TOTAL} points ({r.percent}%).")
+        decides = md(r.brief.decides) if r.brief else "none named"
+        out.append(f"- Owner: {md(r.bet.owner) or 'none'}. Decides the next step: {decides}.")
+        out.append(f"- Readiness: {r.points} of {TOTAL} points ({r.percent}%).")
         out.append(f"- Gaps: {gap_list(r)}.")
-        for kind, note in r.details.items():
-            if kind in LABELS:
-                out.append(f"  - {LABELS[kind]}: {md(note)}")
-        if r.passed["metric"]:
+        out += [f"  - landing_brief.py: {md(x)}" for x in r.problems if "no-brief" not in r.gaps]
+        if r.brief is not None:
             out.append(f"- Definition of good: {definition(r)}.")
         out += [f"- {line}" for line in cost_lines(r)]
-        out.append(f"- {reading_line(r)}")
-        out.append(f"- Status: {status_text(r)}.")
+        out.append(f"- Result: {status_text(r)}.")
         out.append(f"- Loop: {loop_cell(r, loop)}.")
         out.append(f"- Linked work: {len(r.work)} item{'' if len(r.work) == 1 else 's'}.")
         out.append(f"- **Next step:** {md(r.next_step)}")
@@ -147,31 +137,25 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
     out += ["", "## Evidence", "", "| Figure | Value | Computed from |", "|---|---|---|"]
     for name, value, src in figures_table(pf, sources):
         out.append(f"| {name} | {value} | {md(src)} |")
-    out += ["", "Computed by scripts/review.py. The brief score weights are in scripts/score.py.", ""]
+    out += ["", "Computed by scripts/review.py. The readiness weights are in scripts/score.py; brief problems come from landing_brief.py.", ""]
     return "\n".join(out)
-
-
-def definition(r: Review) -> str:
-    p = r.parts
-    direction = "higher" if p["better"].lower() == "higher" else "lower"
-    return f"{md(p['metric'])}, bar {md(p['bar'])}, {direction} is better, by {md(p['by'])}"
 
 
 def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
     """Each portfolio figure, its value, and the files it was computed from."""
     s = sources or {}
-    bets, work, readings = s.get("bets", ""), s.get("work", ""), s.get("readings", "")
+    bets, work, records = s.get("bets", ""), s.get("work", ""), s.get("records", "")
     both = ", ".join(x for x in (bets, work) if x)
-    status_from = ", ".join(x for x in (bets, readings) if x)
+    status_from = f"{records} (landed.status, written by did-it-land)" if records else "no loop records read"
     rows = [
         ("Bets on the roadmap", str(len(pf.reviews)), bets),
-        ("Bets with a complete brief", str(pf.complete), both),
+        ("Bets whose brief parses (landing_brief.py)", str(pf.complete), bets),
         ("Work items", str(pf.work_total), work or "none given"),
         ("Work items linked to no bet", str(len(pf.orphans)), both),
     ]
     if pf.linked_percent is not None:
         rows.append(("Share of work linked to a bet", f"{pf.linked_percent}%", both))
-        rows.append(("Share of work under a bet with a definition of good", f"{pf.judged_percent}%", both))
+        rows.append(("Share of work under a bet whose brief parses", f"{pf.judged_percent}%", both))
     rows += [(f"Bets {k}", str(c), status_from) for k, c in pf.statuses.items()]
     return rows
 
@@ -251,13 +235,13 @@ def section(label: str, title: str, body: str, first: bool = False) -> str:
 def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     n = len(pf.reviews)
     ill = '<span class="ill">Illustrative</span>' if illustrative else ""
-    facts = [("Bets", str(n)), ("Complete brief", str(pf.complete)), ("Work linked to no bet", str(len(pf.orphans)))]
+    facts = [("Bets", str(n)), ("Brief parses", str(pf.complete)), ("Work linked to no bet", str(len(pf.orphans)))]
     if pf.linked_percent is not None:
         facts += [("Work linked to a bet", f"{pf.linked_percent}%"), ("Work under a definition of good", f"{pf.judged_percent}%")]
     cover = (
         f'<section class="slide first">{BRAND}<div class="meta"><span>Bet portfolio review</span><span>As of {h(pf.as_of)}</span>{ill}</div>'
         f"<h1>{h(title)}</h1>"
-        f'<p class="lede">{h(linked_line(pf))} Status words print only where a reading with a named source exists. '
+        f"<p class=\"lede\">{h(linked_line(pf))} Status words are did-it-land's, read from each bet's loop record. "
         "A metric moving is not proof that the bet moved it.</p>"
         f'<div class="facts">{"".join(f"<span><b>{h(v)}</b>{h(k)}</span>" for k, v in facts)}</div>'
         + (f'<p class="sub">{h(ILLUSTRATIVE)}</p>' if illustrative else "")
@@ -279,17 +263,18 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
     ranked = section(
         "02",
         "Ranked review",
-        '<p class="lede">Rank 1 needs work first. Loop shows which Landing Loop steps each bet\'s record holds.</p>'
-        '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Bet</th><th>Owner</th><th>Brief score</th><th>Gaps</th>'
-        f"<th>Status</th><th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
+        '<p class="lede">Rank 1 needs work first. Brief problems are landing_brief.py\'s own words. '
+        "Loop shows which Landing Loop steps each bet's record holds.</p>"
+        '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Bet</th><th>Owner</th><th>Readiness</th><th>Gaps</th>'
+        f"<th>Result</th><th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
     )
     cards = []
     for r in pf.reviews:
         items = [f"Source: {h(r.bet.source)}", f"Gaps: {h(gap_list(r))}"]
-        if r.passed["metric"]:
+        items += [f"landing_brief.py: {h(x)}" for x in r.problems if "no-brief" not in r.gaps]
+        if r.brief is not None:
             items.append(f"Definition of good: {h(definition(r))}")
         items += [h(x.rstrip(".")) for x in cost_lines(r)]
-        items.append(h(reading_line(r).rstrip(".")))
         lis = "".join(f"<li>{x}</li>" for x in items)
         cards.append(
             f'<div class="card betcard"><h3><span>{r.rank} · {h(r.bet.id)}</span>{status_html(r)}</h3><p class="nm">{h(r.bet.name)}</p>'
@@ -309,7 +294,7 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
         "05",
         "Evidence",
         table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))
-        + '<p class="asof">Computed by scripts/review.py. The brief score weights are in scripts/score.py.</p>',
+        + '<p class="asof">Computed by scripts/review.py. The readiness weights are in scripts/score.py; brief problems come from landing_brief.py.</p>',
     )
     return "\n".join(
         [
@@ -357,7 +342,7 @@ def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative:
                 "percent": r.percent,
                 "gaps": r.gaps,
                 "status": r.status,
-                "cost_per_task": r.cost_per_task,
+                "brief_problems": r.problems,
                 "linked_work": [w.id for w in r.work],
                 "next_step": r.next_step,
                 "loop": (loop or {}).get(r.bet.id),

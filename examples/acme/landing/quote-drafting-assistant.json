@@ -4,7 +4,7 @@
   "illustrative": true,
   "brief": {
     "path": "bets.csv row 2",
-    "sha256": "b57d3365915db12386d8d609c45d8f2d77672eac207d1923d21a3a778f1a4b64"
+    "sha256": "281c391677a8f6c1c87a8dbf37a7a43a89b8660d1f7cd17aa986de21abf9d1c3"
   },
   "spec": {
     "tool": "spec-auditor",
@@ -105,7 +105,7 @@
     }
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.2.0",
+    "tool": "bet-portfolio-review 0.2.1",
     "as_of": "2026-11-26",
     "rank": {
       "value": 8,
@@ -150,16 +150,7 @@
     "owner": "Quotes squad lead",
     "decides": "Head of Product",
     "gaps": [],
-    "next_step": "Record it as landed. Head of Product decides what comes next.",
-    "cost_per_task_budget": {
-      "value": 0.027,
-      "unit": "USD per task",
-      "source": "bets.csv row 2: tokens per task x price per token",
-      "window": {
-        "from": "2026-11-26",
-        "to": "2026-11-26"
-      },
-      "as_of": "2026-11-26"
-    }
+    "brief_problems": [],
+    "next_step": "Record it as landed. Head of Product decides what comes next."
   }
 }

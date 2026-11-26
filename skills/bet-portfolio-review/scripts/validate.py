@@ -63,10 +63,10 @@ def check(text: str, computed: dict) -> list[str]:
         for i, x in mentions:
             words = {w.lower() for w in STATUS.findall(x)}
             # The bet's own status, and the status did-it-land wrote into its loop record, are the only words allowed.
-            earned = {bet["status"], (bet.get("loop") or {}).get("landed_status")} - {None}
+            earned = {bet["status"]} - {None}  # did-it-land's word from the loop record, never computed
             wrong = words - earned
             if wrong:
-                want = bet["status"] or "no status word (no reading with a source)"
+                want = bet["status"] or "no status word (no result in the loop record)"
                 errors.append(f"line {i}: status-changed: {bet['id']} shows {', '.join(sorted(wrong))}; computed: {want}.")
     return errors
 
