@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+run/
+.DS_Store
+.ruff_cache/

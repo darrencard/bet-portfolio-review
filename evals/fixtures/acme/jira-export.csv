@@ -1,0 +1,17 @@
+Issue key,Issue id,Summary,Issue Type,Assignee,Description,Parent
+ACME-1,10001,Quote drafting assistant,Epic,Quotes squad lead,"## Landing brief
+- Problem: Tradespeople spend evenings writing quotes.
+- Metric: Quotes sent within 24 hours
+- Bar: 40%
+- Better: higher
+- By: 2026-12-31
+- Non-goals: No pricing advice.
+- Tokens per task: 9000
+- Price per token: $0.000003
+- The line: model call. Only the job summary is drafted by a model.
+- Decides the next step: Head of Product",
+ACME-2,10002,Supplier price sync,Epic,Catalogue squad lead,Keep price books current.,
+ACME-11,10011,Draft job summary from photos,Story,Quotes squad lead,,10001
+ACME-12,10012,Quote send tracking,Story,Quotes squad lead,,ACME-1
+ACME-13,10013,Supplier feed importer,Story,Catalogue squad lead,,ACME-2
+ACME-14,10014,Refactor PDF export,Task,,,

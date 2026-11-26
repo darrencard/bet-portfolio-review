@@ -1,0 +1,8 @@
+{
+  "issues": [
+    {"identifier": "ACM-1", "title": "Draft job summary from photos", "project": {"id": "proj-quotes", "name": "Quote drafting assistant"}},
+    {"identifier": "ACM-2", "title": "Quote send tracking", "project": {"id": "proj-quotes", "name": "Quote drafting assistant"}},
+    {"identifier": "ACM-3", "title": "Reminder wording draft", "project": "Invoice chasing"},
+    {"identifier": "ACM-4", "title": "Dark mode for the web app", "project": null}
+  ]
+}

@@ -1,0 +1,20 @@
+id,title,bet
+ACME-101,Draft job summary from photos,ACME-B1
+ACME-102,Price book lookup for line items,ACME-B1
+ACME-103,Quote send tracking,ACME-B1
+ACME-110,Reminder schedule rules,ACME-B2
+ACME-111,Reminder wording draft,ACME-B2
+ACME-112,Pay-by-link in reminders,ACME-B2
+ACME-120,Job sheet form on mobile,ACME-B3
+ACME-121,Photo upload on job sheet,ACME-B3
+ACME-122,Sync job sheets to office,ACME-B3
+ACME-130,Supplier feed importer,ACME-B4
+ACME-131,Line item matching,ACME-B4
+ACME-140,New onboarding flow,Payments onboarding revamp
+ACME-141,Bank verification step,ACME-B5
+ACME-150,Directory search page,ACME-B6
+ACME-170,Weekly summary draft,ACME-B8
+ACME-171,Job margin report,ACME-B8
+ACME-180,Dark mode for the web app,
+ACME-181,Refactor PDF export,
+ACME-182,Referral programme page,ACME-B9

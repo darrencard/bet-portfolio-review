@@ -1,0 +1,5 @@
+bet,current,prior,source,date
+ACME-B1,43%,36%,Product analytics: quotes_sent event,2026-11-24
+ACME-B2,18,17,Billing export: paid_at minus sent_at,2026-11-24
+ACME-B3,22%,,Product analytics: job_sheet_completed event,2026-11-24
+ACME-B8,31%,28%,,2026-11-24
