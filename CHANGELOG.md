@@ -2,6 +2,7 @@
 
 ## 0.3.3 (2026-11-27)
 
+- Fix round 4: the scorecard's figure prints `2 OF 4`, numerals and uppercase words, since the column head already says IN PLACE. Test for it.
 - The page's picture is now the scorecard, in the grammar of the outcome scorecard on dacard.ai/update: one frame of HTML rows split by hairlines, one row per project in rank order. Each row prints the name, four pips (plan, owner, work linked, cost budget; filled when in place), the figure `3 of 4 in place`, and the next step as a muted check word, with DO FIRST in ink on rank 1. The pips are named once in the column head and once in the caption. Labels and words render 12px Geist Mono, names 14px Geist; no text in any SVG, no viewBox, no boxed chip. The two-axis grid (wide and tall SVGs) is gone.
 - Each pip is drawn on its own, so an empty pip sits where its part is missing (Auto match has no owner, SMS reminders no work). The cost budget is in place when the landing brief states it and the parser lists no problem with either of its two lines; a fixed-code brief that states none counts.
 - Steps done in each project's detail print as words (done in ink, not yet muted), not boxed chips.

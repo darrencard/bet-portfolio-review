@@ -466,7 +466,7 @@ def scorecard_row(r: Review, first: bool) -> str:
     n = sum(marks)
     picture = "".join(sk.pips(1 if ok else 0, 1) for ok in marks)
     word = (sk.status_mark(r.status) if r.status else "") + (sk.check_word("do first", ink=True) if first else "") + sk.check_word(next_word(r))
-    return sk.sc_row(r.bet.name, picture=f'<span class="pips">{picture}</span>', figure=sk.figure_line(f"{n} of {len(PIPS)} in place"), word=word)
+    return sk.sc_row(r.bet.name, picture=f'<span class="pips">{picture}</span>', figure=sk.figure_line(f"{n} OF {len(PIPS)}"), word=word)
 
 
 def scorecard_label(pf: Portfolio) -> str:

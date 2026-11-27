@@ -654,7 +654,11 @@ class Page(unittest.TestCase):
         self.assertEqual(rows, [r.bet.name for r in pf.reviews], "ranked order")
         for r in pf.reviews:
             n = sum(render.in_place(r))
-            self.assertIn(f'<span class="sc-l"><b>{n} of 4 in place</b></span>', frames[0], r.bet.name)
+            self.assertIn(f'<span class="sc-l"><b>{n} OF 4</b></span>', frames[0], r.bet.name)
+        self.assertNotIn("in place</b>", frames[0], "the column head already says IN PLACE")
+        for f in re.findall(r'<span class="sc-l">(.*?)</span>', frames[0]):
+            text = re.sub(r"<[^>]+>", "", f)
+            self.assertEqual(text, text.upper(), "the figure column is numerals and uppercase words")
         self.assertEqual(frames[0].count('<span class="sc-w ink">do first</span>'), 1)
         self.assertIn('<span class="sc-n">Supplier price sync</span>', frames[0].split('<span class="sc-w ink">do first</span>', 1)[0])
         self.assertEqual(frames[0].count('class="sc-pp"'), 4 * len(pf.reviews), "four pips a row")
