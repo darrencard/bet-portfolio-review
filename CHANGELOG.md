@@ -6,6 +6,12 @@
 - README: the repository is public, so the private-until-review notes are gone, and the loop is counted as eleven skills plus the Product & Technology Leader Report.
 - README: one trademark line for Claude and Claude Code.
 - No change to what the skill computes. The version in the sample record's `tool` field moves with the release.
+- Sample: every owner is a role scoped to a team ("Lead, Payments squad", not "Payments squad lead").
+- The next step names a scoped role as a label: "Owner: Lead, Quoting squad. Write the landing brief." and "Decider: Head of Product, Quoting squad. Change the approach or stop the bet." The sample's `portfolio` key changes with it.
+- `--demo` runs a second, smaller fixture, labelled as such: its bets are renamed (Job summary drafting, Overdue reminders, Supplier feed matching) so none shares a name or record with a canonical Acme bet, its owners are scoped roles, and its next step is decided by the Head of Product, Quoting squad.
+- Text selection and the focus ring print in ink, not the template's green.
+- Python 3.11 or later. The entry scripts check the version first and stop with a plain message on anything older.
+- The loop records are built in full first, then each is written to a temporary file and renamed into place, so a crash never leaves a record half written.
 
 ## 0.3.0 (2026-11-26)
 

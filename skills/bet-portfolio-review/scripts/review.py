@@ -8,20 +8,24 @@ and the file fallbacks:
   python3 scripts/review.py --linear-projects projects.csv --as-of 2026-11-26       (Linear's projects CSV export)
   python3 scripts/review.py --jira export.csv --as-of 2026-11-26                    (Jira's CSV export)
   python3 scripts/review.py --csv bets.csv --work work.csv --as-of 2026-11-26
-  python3 scripts/review.py --demo                                                  (the illustrative Acme roadmap)
+  python3 scripts/review.py --demo                                                  (a second, smaller illustrative fixture, not the sample)
 Add --title "Q1 roadmap". Landed, watch or stalled is read from each bet's loop record (did-it-land writes it).
 
 Writes review.md, review.html and review.json to --out (default run/), and the `portfolio` key of each bet's
 Landing Loop record to --landing (default landing/), keeping every other key as found. --no-landing skips the records.
 
-Reads files and writes files. Makes no network calls. Standard library only. Python 3.9 or later.
+Reads files and writes files. Makes no network calls. Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
 
+import sys
+
+if sys.version_info < (3, 11):  # noqa: UP036  (checked first, before anything is read or written)
+    raise SystemExit("review: needs Python 3.11 or later; try python3.12.")
+
 import argparse
 import shutil
-import sys
 from pathlib import Path
 
 import load
@@ -39,7 +43,11 @@ def names(paths: list[Path]) -> str:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Score a roadmap of bets against each bet's landing brief.")
     src = ap.add_mutually_exclusive_group(required=True)
-    src.add_argument("--demo", action="store_true", help="run on the illustrative Acme fixture, to see the output in one command")
+    src.add_argument(
+        "--demo",
+        action="store_true",
+        help="run on a second, smaller illustrative fixture (evals/fixtures/acme, not the sample's roadmap), to see the output in one command",
+    )
     src.add_argument("--csv", type=Path, help="bets.csv: id, name, owner, and a description or one column per brief part")
     src.add_argument("--linear-projects", type=Path, nargs="+", help="Linear projects: the connector's list_projects JSON pages, or Linear's projects CSV")
     src.add_argument("--jira-search", type=Path, nargs="+", help="Jira REST search pages (the connector or /rest/api/3/search), saved as they stand")
@@ -63,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit("review: --demo needs the repository's evals/fixtures/acme folder. Run it from a clone.")
         args.csv, args.work = DEMO / "bets.csv", DEMO / "work.csv"
         args.as_of, args.illustrative = args.as_of or "2026-11-26", True
-        args.title = "Acme roadmap (illustrative)" if args.title == "Roadmap" else args.title
+        args.title = "Demo fixture, not the Acme sample (illustrative)" if args.title == "Roadmap" else args.title
         if args.landing is None and not args.no_landing:
             # Seed the demo's records with the fixture's other loop steps, so loop progress shows.
             args.landing = args.out / "landing"

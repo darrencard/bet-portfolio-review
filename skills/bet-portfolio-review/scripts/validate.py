@@ -12,15 +12,19 @@ Rules:
 
 The model may rewrite the words. It may not add a number, change a status word, claim cause or drop a bet.
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
 
+import sys
+
+if sys.version_info < (3, 11):  # noqa: UP036  (checked first, before anything is read or written)
+    raise SystemExit("validate: needs Python 3.11 or later; try python3.12.")
+
 import argparse
 import json
 import re
-import sys
 from pathlib import Path
 
 NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -48,7 +52,7 @@ def check(text: str, computed: dict) -> list[str]:
     allowed = set(computed.get("figures", []))
     per_bet = {b["id"]: set(b.get("figures", [])) for b in computed.get("bets", [])}
     lines = text.splitlines()
-    for line_no, (line, owner) in enumerate(zip(lines, owners(lines, list(per_bet))), start=1):
+    for line_no, (line, owner) in enumerate(zip(lines, owners(lines, list(per_bet)), strict=False), start=1):
         for n in NUMBER.findall(line):
             if owner is not None and n not in per_bet[owner]:
                 errors.append(f"line {line_no}: figure-not-computed: {n} is not one of {owner}'s computed figures.")

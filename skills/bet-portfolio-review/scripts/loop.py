@@ -10,14 +10,16 @@ This skill also starts a record that does not exist yet: it sets `schema`, `bet`
 the SHA-256 of its text). When a record already has a brief whose hash differs, the record keeps its brief and the
 portfolio key says the brief changed.
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +38,7 @@ def slug(text: str) -> str:
 def slugs(bets: list[Bet]) -> dict[str, str]:
     """One file name per bet. A name two bets share gets the bet id added."""
     names = [slug(b.name) for b in bets]
-    return {b.id: name if names.count(name) == 1 else f"{name}-{slug(b.id)}" for b, name in zip(bets, names)}
+    return {b.id: name if names.count(name) == 1 else f"{name}-{slug(b.id)}" for b, name in zip(bets, names, strict=False)}
 
 
 def read(path: Path) -> dict[str, Any] | None:
@@ -102,10 +104,14 @@ def collect(folder: Path, bets: list[Bet]) -> dict[str, dict[str, Any] | None]:
 
 
 def write(folder: Path, pf: Portfolio, sources: dict[str, str], existing: dict[str, dict[str, Any] | None]) -> list[Path]:
-    """Write the portfolio key into each bet's record. Every other key stays exactly as it was."""
+    """Write the portfolio key into each bet's record. Every other key stays exactly as it was.
+
+    Every record is built first; only then is each written, to a temporary file renamed over the old one, so a crash
+    part way never leaves a record half written or without a key it had.
+    """
     folder.mkdir(parents=True, exist_ok=True)
     names = slugs([r.bet for r in pf.reviews])
-    written = []
+    ready = []
     for r in pf.reviews:
         path = folder / f"{names[r.bet.id]}.json"
         record = existing.get(r.bet.id) or {"schema": SCHEMA, "bet": names[r.bet.id]}
@@ -116,6 +122,20 @@ def write(folder: Path, pf: Portfolio, sources: dict[str, str], existing: dict[s
         elif record["brief"].get("sha256") != digest:
             note = "The brief has changed since this record was started; the record keeps the original brief hash."
         record["portfolio"] = portfolio_key(r, pf, sources, note)
-        path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-        written.append(path)
-    return written
+        ready.append((path, json.dumps(record, indent=2, ensure_ascii=False) + "\n"))
+    for path, text in ready:
+        write_atomic(path, text)
+    return [path for path, _ in ready]
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Write to a temporary file beside the record, then rename it over the record in one step."""
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        os.chmod(tmp, 0o644)  # mkstemp makes the file private; a loop record is shared with the other skills
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise

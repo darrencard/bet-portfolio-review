@@ -15,7 +15,7 @@ Groups:
   Claims      validate.py refuses added figures, changed status words, causal claims and dropped bets
   Hygiene     the vendored landing brief is unchanged; no em dashes or banned words in the repo
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
@@ -63,11 +63,11 @@ FULL = """## Landing brief
 - Tokens per task: 9000
 - Price per token: $0.000003
 - The line: model call. Only the summary is drafted.
-- Decides the next step: Head of Product
+- Decides the next step: Head of Product, Quoting squad
 """
 
 
-def bet(description: str = FULL, owner: str = "Quotes squad lead", bid: str = "B1", name: str = "Quotes") -> load.Bet:
+def bet(description: str = FULL, owner: str = "Lead, Quoting squad", bid: str = "B1", name: str = "Quotes") -> load.Bet:
     b = load.Bet(id=bid, name=name, owner=owner, description=description, source="test")
     b.aliases = {bid.lower(), name.lower()}
     return b
@@ -224,8 +224,8 @@ class Ranking(unittest.TestCase):
     def test_one_next_step_each(self):
         steps = {r.bet.id: r.next_step for r in acme().reviews}
         self.assertTrue(steps["ACME-B6"].startswith("Name one owner"))
-        self.assertTrue(steps["ACME-B5"].startswith("Payments squad lead writes the landing brief"))
-        self.assertTrue(steps["ACME-B2"].startswith("Head of Product decides"))
+        self.assertTrue(steps["ACME-B5"].startswith("Owner: Lead, Payments squad. Write the landing brief"))
+        self.assertTrue(steps["ACME-B2"].startswith("Decider: Head of Product, Quoting squad. Change the approach or stop"))
         self.assertTrue(steps["ACME-B8"].startswith("Next in the loop, 02 Spec: run spec-auditor"), "no spec key yet, so the spec comes next")
 
     def test_with_a_spec_and_no_result_the_next_step_is_did_it_land(self):
@@ -241,7 +241,7 @@ class Cost(unittest.TestCase):
         self.assertEqual(render.cost_lines(r), ["Cost: not checked. Run cost-budget-check."])
 
     def test_cost_key_is_printed_as_written(self):
-        record = json.loads((ACME / "landing" / "quote-drafting-assistant.json").read_text(encoding="utf-8"))
+        record = json.loads((ACME / "landing" / "job-summary-drafting.json").read_text(encoding="utf-8"))
         r = score.review_bet(bet(), [work()], AS_OF, record)
         line = render.cost_lines(r)[0]
         self.assertIn("tokens per task 8,400 tokens", line)
@@ -402,13 +402,13 @@ class Claims(unittest.TestCase):
 
     def test_figure_moved_to_another_bet(self):
         # 40% is ACME-B1's bar; printing it on ACME-B2's row is refused even though 40 appears in the review.
-        old = "| Invoice chasing (ACME-B2) | Payments squad lead |"
-        edited = self.md.replace(old, "| Invoice chasing (ACME-B2), now at 40% | Payments squad lead |")
+        old = "| Overdue reminders (ACME-B2) | Lead, Payments squad |"
+        edited = self.md.replace(old, "| Overdue reminders (ACME-B2), now at 40% | Lead, Payments squad |")
         self.assertIn("40", self.data["figures"])
         self.assertTrue(any("not one of ACME-B2's computed figures" in e for e in validate.check(edited, self.data)))
 
     def test_changed_status(self):
-        old = "| Invoice chasing (ACME-B2) | Payments squad lead | 14 of 14 (100%) | None | stalled"
+        old = "| Overdue reminders (ACME-B2) | Lead, Payments squad | 14 of 14 (100%) | None | stalled"
         edited = self.md.replace(old, old.replace("stalled", "watch"))
         self.assertNotEqual(edited, self.md)
         self.assertTrue(any("status-changed: ACME-B2" in e for e in validate.check(edited, self.data)))
@@ -430,9 +430,9 @@ class LiveFormats(unittest.TestCase):
     def test_linear_projects_csv_fallback(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "projects.csv"
-            path.write_text('Name,Status,Lead,Description\nQuotes,started,Quotes squad lead,"' + FULL + '"\n', encoding="utf-8")
+            path.write_text('Name,Status,Lead,Description\nQuotes,started,"Lead, Quoting squad","' + FULL + '"\n', encoding="utf-8")
             bets = load.linear_bets([path])
-            self.assertEqual((bets[0].id, bets[0].owner), ("Quotes", "Quotes squad lead"))
+            self.assertEqual((bets[0].id, bets[0].owner), ("Quotes", "Lead, Quoting squad"))
             self.assertEqual(score.review_bet(bets[0], [work("Quotes")], AS_OF).gaps, ["no-result"])
 
     def test_linear_issue_pages_overlap_once(self):
@@ -453,7 +453,7 @@ class LiveFormats(unittest.TestCase):
                     "fields": {
                         "summary": "Quotes",
                         "issuetype": {"name": "Epic"},
-                        "assignee": {"displayName": "Quotes squad lead"},
+                        "assignee": {"displayName": "Lead, Quoting squad"},
                         "status": {"name": "In Progress"},
                         "description": {"type": "doc", "content": brief},
                     },
@@ -492,10 +492,10 @@ class Loop(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             landing = Path(d) / "landing"
             landing.mkdir()
-            before = json.loads((ACME / "landing" / "invoice-chasing.json").read_text(encoding="utf-8"))
-            (landing / "invoice-chasing.json").write_text(json.dumps(before), encoding="utf-8")
+            before = json.loads((ACME / "landing" / "overdue-reminders.json").read_text(encoding="utf-8"))
+            (landing / "overdue-reminders.json").write_text(json.dumps(before), encoding="utf-8")
             self.run_cli(landing, Path(d) / "run")
-            after = json.loads((landing / "invoice-chasing.json").read_text(encoding="utf-8"))
+            after = json.loads((landing / "overdue-reminders.json").read_text(encoding="utf-8"))
             self.assertEqual({k: v for k, v in after.items() if k != "portfolio"}, before, "every other key is kept exactly")
             self.assertEqual(list(after)[: len(before)], list(before))
             self.assertNotIn("note", after["portfolio"], "the fixture's brief hash matches")
@@ -505,8 +505,8 @@ class Loop(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             landing = Path(d) / "landing"
             self.run_cli(landing, Path(d) / "run")
-            record = json.loads((landing / "quote-drafting-assistant.json").read_text(encoding="utf-8"))
-            self.assertEqual((record["schema"], record["bet"]), ("landing-loop/1", "quote-drafting-assistant"))
+            record = json.loads((landing / "job-summary-drafting.json").read_text(encoding="utf-8"))
+            self.assertEqual((record["schema"], record["bet"]), ("landing-loop/1", "job-summary-drafting"))
             self.assertEqual(len(record["brief"]["sha256"]), 64)
             figures = [v for v in record["portfolio"].values() if isinstance(v, dict)]
             self.assertEqual(len(figures), 4, "rank, readiness, readiness percent, linked work")
@@ -522,10 +522,10 @@ class Loop(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             landing = Path(d) / "landing"
             landing.mkdir()
-            rec = {"schema": "landing-loop/1", "bet": "invoice-chasing", "brief": {"path": "old", "sha256": "0" * 64}}
-            (landing / "invoice-chasing.json").write_text(json.dumps(rec), encoding="utf-8")
+            rec = {"schema": "landing-loop/1", "bet": "overdue-reminders", "brief": {"path": "old", "sha256": "0" * 64}}
+            (landing / "overdue-reminders.json").write_text(json.dumps(rec), encoding="utf-8")
             self.run_cli(landing, Path(d) / "run")
-            after = json.loads((landing / "invoice-chasing.json").read_text(encoding="utf-8"))
+            after = json.loads((landing / "overdue-reminders.json").read_text(encoding="utf-8"))
             self.assertEqual(after["brief"], rec["brief"])
             self.assertIn("brief has changed", after["portfolio"]["note"])
 
@@ -533,10 +533,10 @@ class Loop(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             landing = Path(d) / "landing"
             landing.mkdir()
-            (landing / "invoice-chasing.json").write_text('{"something": "else"}', encoding="utf-8")
+            (landing / "overdue-reminders.json").write_text('{"something": "else"}', encoding="utf-8")
             with self.assertRaises(SystemExit):
                 self.run_cli(landing, Path(d) / "run")
-            self.assertEqual((landing / "invoice-chasing.json").read_text(encoding="utf-8"), '{"something": "else"}')
+            self.assertEqual((landing / "overdue-reminders.json").read_text(encoding="utf-8"), '{"something": "else"}')
 
     def test_progress_shows_in_both_outputs(self):
         with tempfile.TemporaryDirectory() as d:
@@ -562,6 +562,94 @@ class Loop(unittest.TestCase):
 
 SUFFIXES = {".py", ".md", ".json", ".csv", ".yml", ".toml", ".html", ""}
 FILES = [p for p in ROOT.rglob("*") if p.is_file() and not {".git", ".ruff_cache", "__pycache__"} & set(p.parts) and p.suffix in SUFFIXES]
+
+
+class Roles(unittest.TestCase):
+    """Owners are roles scoped to a team; the next step must read as a sentence for them."""
+
+    def test_sample_owners_use_the_scoped_form(self):
+        sample = ROOT / "examples" / "acme"
+        for p in [
+            sample / "bets.csv",
+            *sample.glob("bet-portfolio-review.*"),
+            *(sample / "landing").glob("*.json"),
+            ACME / "bets.csv",
+            ACME / "linear-projects.json",
+            ACME / "jira-export.csv",
+        ]:
+            text = p.read_text(encoding="utf-8")
+            self.assertNotRegex(text, r"\b[A-Z][a-z]+ squad lead\b", p)
+            self.assertNotIn("VP ", text, p)
+
+    def test_a_scoped_owner_is_a_label_not_the_subject(self):
+        r = score.review_bet(bet(description="", owner="Lead, Quoting squad"), [work()], AS_OF)
+        self.assertEqual(r.next_step, "Owner: Lead, Quoting squad. Write the landing brief: problem, definition of good, non-goals, cost budget, the line.")
+        for gap in ("writes the landing brief", "squad decides", "squad writes"):
+            self.assertNotIn(gap, r.next_step)
+
+    def test_a_scoped_decider_is_a_label_not_the_subject(self):
+        r = score.review_bet(bet(), [work()], AS_OF, {"landed": {"status": "stalled"}})
+        self.assertEqual(r.next_step, "Decider: Head of Product, Quoting squad. Change the approach or stop the bet.")
+
+
+class DemoFixture(unittest.TestCase):
+    """--demo runs a second, smaller fixture. It must not read as the sample's canonical Acme bets."""
+
+    def test_demo_bets_do_not_share_a_slug_with_the_canonical_briefs(self):
+        canonical = {p.stem for p in (ROOT / "examples" / "acme" / "briefs").glob("*.md")}
+        demo = set(loop.slugs(load.csv_bets(ACME / "bets.csv")).values())
+        self.assertFalse(demo & canonical, demo & canonical)
+        self.assertFalse({p.stem for p in (ACME / "landing").glob("*.json")} & canonical)
+
+    def test_demo_is_labelled_as_a_second_fixture(self):
+        self.assertIn("second, smaller fixture", (ACME / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("second, smaller fixture", (ROOT / "README.md").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as d:
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                review.main(["--demo", "--out", d])
+            self.assertTrue((Path(d) / "review.md").read_text(encoding="utf-8").startswith("# Bet portfolio review: Demo fixture, not the Acme sample"))
+
+
+class Page(unittest.TestCase):
+    def test_selection_and_focus_ring_are_ink_not_green(self):
+        page = (ROOT / "examples" / "acme" / "bet-portfolio-review.html").read_text(encoding="utf-8")
+        # The vendored stylesheet paints both green; ours comes later in the page, so it wins.
+        self.assertTrue(page[page.rindex("::selection") :].startswith("::selection{background:var(--t1);color:var(--bg)}"))
+        self.assertTrue(page[page.rindex(":focus-visible") :].startswith(":focus-visible{outline-color:var(--t1)}"))
+
+
+class Floor(unittest.TestCase):
+    def test_entry_scripts_check_the_version_before_anything_else(self):
+        for name in ("review.py", "validate.py"):
+            text = (SCRIPTS / name).read_text(encoding="utf-8")
+            body = text[text.index("from __future__ import annotations") :]
+            guard = body.index("if sys.version_info < (3, 11):")
+            self.assertIn("needs Python 3.11 or later; try python3.12", body)
+            first_other_import = re.search(r"^(import (?!sys\b)|from (?!__future__))", body, re.M).start()
+            self.assertLess(guard, first_other_import, name)
+
+    def test_a_crash_part_way_leaves_every_record_as_it_was(self):
+        with tempfile.TemporaryDirectory() as d:
+            landing = Path(d) / "landing"
+            shutil.copytree(ACME / "landing", landing)
+            before = {p.name: p.read_bytes() for p in landing.glob("*.json")}
+            pf = acme()
+            real, calls = loop.portfolio_key, []
+
+            def fail_late(*args, **kwargs):
+                calls.append(1)
+                if len(calls) == len(pf.reviews):
+                    raise RuntimeError("crash")
+                return real(*args, **kwargs)
+
+            loop.portfolio_key = fail_late
+            try:
+                with self.assertRaises(RuntimeError):
+                    loop.write(landing, pf, {"bets": "bets.csv", "work": "work.csv"}, loop.collect(landing, [r.bet for r in pf.reviews]))
+            finally:
+                loop.portfolio_key = real
+            self.assertEqual({p.name: p.read_bytes() for p in landing.glob("*.json")}, before)
+            self.assertEqual(list(landing.glob(".*")), [], "no temporary file left behind")
 
 
 class Hygiene(unittest.TestCase):

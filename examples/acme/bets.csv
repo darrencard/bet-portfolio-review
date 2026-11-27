@@ -1,9 +1,9 @@
 id,name,owner,brief_file
 ACME-1,Quote drafting,"Lead, Quoting squad",briefs/quote-drafting.md
-ACME-2,Invoice chasing,Payments squad lead,briefs/invoice-chasing.md
-ACME-3,Automatic reminders,Payments squad lead,briefs/automatic-reminders.md
-ACME-4,Payment links,Payments squad lead,briefs/payment-links.md
+ACME-2,Invoice chasing,"Lead, Payments squad",briefs/invoice-chasing.md
+ACME-3,Automatic reminders,"Lead, Payments squad",briefs/automatic-reminders.md
+ACME-4,Payment links,"Lead, Payments squad",briefs/payment-links.md
 ACME-5,Auto match,,briefs/auto-match.md
-ACME-6,Job scheduler,Field squad lead,briefs/job-scheduler.md
-ACME-7,SMS reminders,Messaging squad lead,briefs/sms-reminders.md
+ACME-6,Job scheduler,"Lead, Field squad",briefs/job-scheduler.md
+ACME-7,SMS reminders,"Lead, Messaging squad",briefs/sms-reminders.md
 ACME-8,Supplier price sync,"Lead, Quoting squad",

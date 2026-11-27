@@ -14,7 +14,7 @@ Formats:
           through Parent, Parent key, Parent id or the Epic Link field.
 Metric readings are not read here: landed, watch or stalled is did-it-land's call, read from the loop record.
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
@@ -89,7 +89,7 @@ def rows(path: Path) -> list[dict[str, str]]:
         if not any(c.strip() for c in cells):
             continue
         row: dict[str, str] = {}
-        for name, cell in zip(names, cells):
+        for name, cell in zip(names, cells, strict=False):
             if name and name not in row:
                 row[name] = clean(cell)
         out.append(row)
@@ -229,7 +229,7 @@ def linear_bets(paths: list[Path], include_closed: bool = False) -> list[Bet]:
         projects += found
         where += [path.name] * len(found)
     bets = []
-    for project, src in zip(projects, where):
+    for project, src in zip(projects, where, strict=False):
         if not include_closed and is_closed(project):
             continue
         pid = clean(project.get("id") or project.get("slugId") or project.get("name"))

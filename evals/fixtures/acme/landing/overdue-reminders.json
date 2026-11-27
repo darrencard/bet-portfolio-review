@@ -1,10 +1,10 @@
 {
   "schema": "landing-loop/1",
-  "bet": "invoice-chasing",
+  "bet": "overdue-reminders",
   "illustrative": true,
   "brief": {
     "path": "bets.csv row 3",
-    "sha256": "5cfa55e3c2d398ace8836cc09eee107c284f3c3afe087786ef0450af18003a8c"
+    "sha256": "ebc0979c96589e558d2a269f7cc762e159e58c8d76ebb50075756a0e1661da4e"
   },
   "spec": {
     "tool": "spec-auditor",

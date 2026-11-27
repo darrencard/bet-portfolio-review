@@ -1,8 +1,8 @@
 {
   "issues": [
-    {"identifier": "ACM-1", "title": "Draft job summary from photos", "project": {"id": "proj-quotes", "name": "Quote drafting assistant"}},
-    {"identifier": "ACM-2", "title": "Quote send tracking", "project": {"id": "proj-quotes", "name": "Quote drafting assistant"}},
-    {"identifier": "ACM-3", "title": "Reminder wording draft", "project": "Invoice chasing"},
+    {"identifier": "ACM-1", "title": "Draft job summary from photos", "project": {"id": "proj-quotes", "name": "Job summary drafting"}},
+    {"identifier": "ACM-2", "title": "Quote send tracking", "project": {"id": "proj-quotes", "name": "Job summary drafting"}},
+    {"identifier": "ACM-3", "title": "Reminder wording draft", "project": "Overdue reminders"},
     {"identifier": "ACM-4", "title": "Dark mode for the web app", "project": null}
   ]
 }

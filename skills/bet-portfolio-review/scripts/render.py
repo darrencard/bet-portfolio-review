@@ -8,7 +8,7 @@ labels, hairline rows, colour for status only, brass where a person owes somethi
 Every number printed here comes from score.py. Every piece of text read from a source is escaped: in Markdown,
 pipes, angle brackets and line breaks are neutralised; in HTML, everything goes through html.escape.
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
@@ -176,9 +176,12 @@ def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[
     return rows
 
 
-# Layout for a review page, on top of the Leader Report stylesheet: no rail, sections instead of slides.
+# Layout for a review page, on top of the Leader Report stylesheet: no rail, sections instead of slides. The template's
+# green selection and focus ring are set to ink: green is did-it-land's landed only.
 PAGE_CSS = """
 main{margin-left:0}
+::selection{background:var(--t1);color:var(--bg)}
+:focus-visible{outline-color:var(--t1)}
 .slide{min-height:0;padding:48px 40px 36px}
 .slide.first{padding-top:56px}
 .slide h1{font-size:clamp(36px,4.6vw,60px)}
@@ -367,7 +370,7 @@ def to_json(pf: Portfolio, markdown: str, sources: dict[str, str], illustrative:
     lines = markdown.splitlines()
     ids = [r.bet.id for r in pf.reviews]
     per_bet: dict[str, set[str]] = {i: set() for i in ids}
-    for line, owner in zip(lines, validate.owners(lines, ids)):
+    for line, owner in zip(lines, validate.owners(lines, ids), strict=False):
         if owner is not None:
             per_bet[owner].update(NUMBER.findall(line))
     data = {

@@ -8,7 +8,7 @@ Status words (landed, watch, stalled) are did-it-land's, read from each bet's lo
 
 ## Do these first
 
-1. **Supplier price sync (ACME-8):** Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
+1. **Supplier price sync (ACME-8):** Owner: Lead, Quoting squad. Write the landing brief: problem, definition of good, non-goals, cost budget, the line.
 2. **Auto match (ACME-5):** Name one owner for this bet.
 3. **SMS reminders (ACME-7):** Link the work that delivers this bet, or cut the bet.
 
@@ -33,14 +33,14 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 
 | Rank | Bet | Owner | Readiness | Gaps | Result | Loop | Next step |
 |---|---|---|---|---|---|---|---|
-| 1 | Supplier price sync (ACME-8) | Lead, Quoting squad | 4 of 14 (29%) | No landing brief | no result yet | spec no, evals no, cost no, result no | Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line. |
+| 1 | Supplier price sync (ACME-8) | Lead, Quoting squad | 4 of 14 (29%) | No landing brief | no result yet | spec no, evals no, cost no, result no | Owner: Lead, Quoting squad. Write the landing brief: problem, definition of good, non-goals, cost budget, the line. |
 | 2 | Auto match (ACME-5) | none | 11 of 14 (79%) | No owner; No result yet | no result yet | spec no, evals no, cost no, result no | Name one owner for this bet. |
-| 3 | SMS reminders (ACME-7) | Messaging squad lead | 13 of 14 (93%) | No work linked; No result yet | no result yet | spec no, evals no, cost no, result no | Link the work that delivers this bet, or cut the bet. |
+| 3 | SMS reminders (ACME-7) | Lead, Messaging squad | 13 of 14 (93%) | No work linked; No result yet | no result yet | spec no, evals no, cost no, result no | Link the work that delivers this bet, or cut the bet. |
 | 4 | Quote drafting (ACME-1) | Lead, Quoting squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
-| 5 | Invoice chasing (ACME-2) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
-| 6 | Automatic reminders (ACME-3) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
-| 7 | Payment links (ACME-4) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
-| 8 | Job scheduler (ACME-6) | Field squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
+| 5 | Invoice chasing (ACME-2) | Lead, Payments squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
+| 6 | Automatic reminders (ACME-3) | Lead, Payments squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
+| 7 | Payment links (ACME-4) | Lead, Payments squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
+| 8 | Job scheduler (ACME-6) | Lead, Field squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
 
 ## Each bet
 
@@ -54,7 +54,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 - Result: no result yet.
 - Loop: spec no, evals no, cost no, result no.
 - Linked work: 1 item.
-- **Next step:** Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
+- **Next step:** Owner: Lead, Quoting squad. Write the landing brief: problem, definition of good, non-goals, cost budget, the line.
 
 ### 2. Auto match (ACME-5)
 
@@ -72,7 +72,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 3. SMS reminders (ACME-7)
 
 - Source: briefs/sms-reminders.md.
-- Owner: Messaging squad lead. Decides the next step: Head of Product, Messaging squad.
+- Owner: Lead, Messaging squad. Decides the next step: Head of Product, Messaging squad.
 - Readiness: 13 of 14 points (93%).
 - Gaps: No work linked; No result yet.
 - Definition of good: Reminder open rate, bar 55%, higher is better, by 2026-12-15.
@@ -98,7 +98,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 5. Invoice chasing (ACME-2)
 
 - Source: briefs/invoice-chasing.md.
-- Owner: Payments squad lead. Decides the next step: Head of Product, Payments squad.
+- Owner: Lead, Payments squad. Decides the next step: Head of Product, Payments squad.
 - Readiness: 14 of 14 points (100%).
 - Gaps: No result yet.
 - Definition of good: Days sales outstanding, bar 30, lower is better, by 2026-12-31.
@@ -111,7 +111,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 6. Automatic reminders (ACME-3)
 
 - Source: briefs/automatic-reminders.md.
-- Owner: Payments squad lead. Decides the next step: Head of Product, Payments squad.
+- Owner: Lead, Payments squad. Decides the next step: Head of Product, Payments squad.
 - Readiness: 14 of 14 points (100%).
 - Gaps: No result yet.
 - Definition of good: Reminders sent per week, bar 20,000, higher is better, by 2026-11-30.
@@ -124,7 +124,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 7. Payment links (ACME-4)
 
 - Source: briefs/payment-links.md.
-- Owner: Payments squad lead. Decides the next step: Head of Product, Payments squad.
+- Owner: Lead, Payments squad. Decides the next step: Head of Product, Payments squad.
 - Readiness: 14 of 14 points (100%).
 - Gaps: No result yet.
 - Definition of good: Payment link conversion, bar 18%, higher is better, by 2026-11-30.
@@ -137,7 +137,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 8. Job scheduler (ACME-6)
 
 - Source: briefs/job-scheduler.md.
-- Owner: Field squad lead. Decides the next step: Head of Product, Field squad.
+- Owner: Lead, Field squad. Decides the next step: Head of Product, Field squad.
 - Readiness: 14 of 14 points (100%).
 - Gaps: No result yet.
 - Definition of good: Weekly active schedulers, bar 3,000, higher is better, by 2026-10-31.

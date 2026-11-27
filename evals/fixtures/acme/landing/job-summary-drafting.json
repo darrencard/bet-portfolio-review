@@ -1,10 +1,10 @@
 {
   "schema": "landing-loop/1",
-  "bet": "quote-drafting-assistant",
+  "bet": "job-summary-drafting",
   "illustrative": true,
   "brief": {
     "path": "bets.csv row 2",
-    "sha256": "281c391677a8f6c1c87a8dbf37a7a43a89b8660d1f7cd17aa986de21abf9d1c3"
+    "sha256": "db1ae59feb6154b395a80ec8652c43eaa1a464ebc1a8177b3fdd9bb4da4a3c13"
   },
   "spec": {
     "tool": "spec-auditor",

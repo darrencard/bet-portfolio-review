@@ -115,4 +115,4 @@ landed, watch and stalled are did-it-land's words, read from the loop record and
 
 ## Requirements
 
-Python 3.9 or later. Standard library only: nothing to install, and no network access needed.
+Python 3.11 or later; the scripts say so and stop on anything older, so use `python3.12` if `python3` is older. Standard library only: nothing to install, and no network access needed.

@@ -18,14 +18,14 @@ In Claude Code:
 Standalone, paste this into Claude Code:
 
 ```text
-Install the bet-portfolio-review skill from https://github.com/darrencard/bet-portfolio-review: clone it, run python3 -m unittest discover -s evals and stop if any test fails, then copy skills/bet-portfolio-review into ~/.claude/skills/. Then review my roadmap: read the Linear projects and issues already connected to this session (or my Jira search results through the Jira connector, or ask me for a CSV), run the review as of today, and show me the ranked table, the work linked to no bet and the top three next steps.
+Install the bet-portfolio-review skill from https://github.com/darrencard/bet-portfolio-review: clone it, find a Python 3.11 or later on this machine (macOS python3 is often 3.9), run python -m unittest discover -s evals with it and stop if any test fails, then copy skills/bet-portfolio-review into ~/.claude/skills/. Then review my roadmap: read the Linear projects and issues already connected to this session (or my Jira search results through the Jira connector, or ask me for a CSV), run the review as of today, and show me the ranked table, the work linked to no bet and the top three next steps.
 ```
 
-**See it first:** the sample page is [examples/acme/bet-portfolio-review.html](examples/acme/bet-portfolio-review.html), reviewing the illustrative Acme roadmap. `--demo` runs a second, smaller fixture in one command: `python3 skills/bet-portfolio-review/scripts/review.py --demo --out run`.
+**See it first:** the sample page is [examples/acme/bet-portfolio-review.html](examples/acme/bet-portfolio-review.html), reviewing the illustrative Acme roadmap. `--demo` runs a second, smaller fixture (`evals/fixtures/acme/`, its own made-up bets, not the sample's roadmap) in one command: `python3.12 skills/bet-portfolio-review/scripts/review.py --demo --out run`.
 
 ```text
 Do these first
-1. Supplier price sync (ACME-8): Lead, Quoting squad writes the landing brief.
+1. Supplier price sync (ACME-8): Owner: Lead, Quoting squad. Write the landing brief.
 2. Auto match (ACME-5): Name one owner for this bet.
 3. SMS reminders (ACME-7): Link the work that delivers this bet, or cut the bet.
 ```
@@ -88,6 +88,6 @@ Templates for the two CSVs are in `skills/bet-portfolio-review/assets/`. Linear 
 - The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.9 or later, standard library only. MIT licensed. Version 0.3.1.
+Python 3.11 or later; the scripts check first and stop with a plain message on anything older (try python3.12). Standard library only. MIT licensed. Version 0.3.1.
 
 Claude and Claude Code are trademarks of Anthropic, PBC. These skills are independent and not affiliated with or endorsed by Anthropic.

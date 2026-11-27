@@ -17,7 +17,7 @@ links to it, the rank, and the one next step. The readiness score (14 points):
 Orphan work is ported from Throughline's detectOrphans (lib/analysis/orphans.ts): an item with no bet, or one that
 links to a bet not on the roadmap.
 
-Standard library only. Python 3.9 or later.
+Standard library only. Python 3.11 or later.
 """
 
 from __future__ import annotations
@@ -104,32 +104,36 @@ def review_bet(bet: Bet, work: list[Work], as_of: str, record: dict[str, Any] | 
 
 
 def next_step(r: Review) -> str:
-    """One next step, from the most important gap. Who decides is named when the brief names them."""
+    """One next step, from the most important gap. Who decides is named when the brief names them.
+
+    Owners and deciders are often roles scoped to a team ("Lead, Quoting squad"), so the role is named as a label
+    ("Owner: ...", "Decider: ...") and the step is an instruction; a scoped role never sits as a sentence's subject.
+    """
     b = r.brief
     who = b.decides if b else (r.bet.owner or "the bet's owner")
     for gap in r.gaps:
         if gap == "no-owner":
             return "Name one owner for this bet."
         if gap == "no-brief":
-            return f"{r.bet.owner or 'The owner'} writes the landing brief: problem, definition of good, non-goals, cost budget, the line."
+            return f"Owner: {r.bet.owner or 'none named'}. Write the landing brief: problem, definition of good, non-goals, cost budget, the line."
         if gap == "brief-problems":
             return f"Fix the brief: {r.problems[0]}"
         if gap == "no-work" and r.status != "landed":
             return "Link the work that delivers this bet, or cut the bet."
     assert b is not None  # noqa: S101  (a bet with no brief problems has a parsed brief)
     if "date-passed" in r.gaps and r.status is None:
-        return f"The date, {b.by}, has passed with no result yet. Run did-it-land on {b.metric}; then {who} decides what comes next."
+        return f"The date, {b.by}, has passed with no result yet. Run did-it-land on {b.metric}, then the decider chooses what comes next. Decider: {who}."
     if "date-passed" in r.gaps:
-        return f"The date, {b.by}, has passed. {who} decides: extend the date, change the approach or stop."
+        return f"The date, {b.by}, has passed. Decider: {who}. Extend the date, change the approach or stop."
     if r.status is None and "spec" not in (r.record or {}):
         return "Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts."
     if r.status is None:
         return f"Run did-it-land on {b.metric} once it has a reading from its source."
     if r.status == "landed":
-        return f"Record it as landed. {who} decides what comes next."
+        return f"Record it as landed. Decider: {who}. Choose what comes next."
     if r.status == "watch":
         return f"Take the next reading of {b.metric} before {b.by}."
-    return f"{who} decides: change the approach or stop the bet."
+    return f"Decider: {who}. Change the approach or stop the bet."
 
 
 @dataclass
