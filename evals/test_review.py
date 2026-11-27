@@ -554,7 +554,7 @@ class Loop(unittest.TestCase):
                 review.main(["--demo", "--out", str(out)])
             md = (out / "review.md").read_text(encoding="utf-8")
             self.assertIn("build plan checked yes, quality tested yes, cost checked no, result stalled", md)
-            self.assertIn('<span class="chip off">cost checked</span>', (out / "review.html").read_text(encoding="utf-8"))
+            self.assertIn('<span class="todo">cost checked</span>', (out / "review.html").read_text(encoding="utf-8"))
             self.assertEqual(validate.check(md, json.loads((out / "review.json").read_text(encoding="utf-8"))), [])
 
     def test_loop_status_word_cannot_be_invented(self):
@@ -642,20 +642,66 @@ class Page(unittest.TestCase):
 
     def test_the_visual_draws_only_figures_the_page_prints(self):
         for page in (self.page, self.demo):
-            self.assertEqual(len(svgkit.visuals_in(page)), 2, "the grid, wide and tall")
             self.assertEqual(svgkit.unprinted(page), [])
-            text = svgkit.page_text(page)
-            for svg in svgkit.visuals_in(page):
-                for line in svgkit.texts_in(svg):
-                    if line not in ("DO FIRST", "NONE", "PLAN INCOMPLETE", "PLAN COMPLETE", "WORK LINKED", "NO WORK"):  # axis words
-                        self.assertIn(line.upper(), text, f"{line!r} is drawn but not printed")
+            self.assertEqual(svgkit.svgs_with_text(page), [], "text inside an SVG")
 
-    def test_each_project_is_drawn_once_per_variant(self):
-        for svg in svgkit.visuals_in(self.page):
-            drawn = " ".join(svgkit.texts_in(svg))
-            for r in acme_sample().reviews:
-                self.assertEqual(" ".join(drawn.split()).count(r.bet.name.upper()), 1, r.bet.name)
-            self.assertEqual(drawn.count("DO FIRST"), 1)
+    def test_the_scorecard_is_one_frame_with_one_row_per_project(self):
+        pf = acme_sample()
+        frames = svgkit.frames_in(self.page)
+        self.assertEqual(len(frames), 1, "one frame per visual")
+        self.assertEqual(frames[0].count('<div class="sc-r">'), len(pf.reviews))
+        rows = re.findall(r'<div class="sc-r"><span class="sc-n">(.*?)</span>', frames[0])
+        self.assertEqual(rows, [r.bet.name for r in pf.reviews], "ranked order")
+        for r in pf.reviews:
+            n = sum(render.in_place(r))
+            self.assertIn(f'<span class="sc-l"><b>{n} of 4 in place</b></span>', frames[0], r.bet.name)
+        self.assertEqual(frames[0].count('<span class="sc-w ink">do first</span>'), 1)
+        self.assertIn('<span class="sc-n">Supplier price sync</span>', frames[0].split('<span class="sc-w ink">do first</span>', 1)[0])
+        self.assertEqual(frames[0].count('class="sc-pp"'), 4 * len(pf.reviews), "four pips a row")
+
+    def test_each_pip_is_its_own_part(self):
+        r = by_id(acme_sample())
+        self.assertEqual(render.in_place(r["ACME-8"]), (False, True, True, False), "no brief: no plan and no cost budget")
+        self.assertEqual(render.in_place(r["ACME-5"]), (True, False, True, True), "no owner")
+        self.assertEqual(render.in_place(r["ACME-7"]), (True, True, False, True), "no work; its fixed-code brief states a budget of none")
+        missing = bet(FULL.replace("- Tokens per task: 9000\n", ""))
+        self.assertEqual(render.in_place(score.review_bet(missing, [work()], AS_OF)), (False, True, True, False))
+
+    def test_no_text_inside_a_picture_and_no_picture_scales(self):
+        for page in (self.page, self.demo):
+            self.assertEqual(svgkit.svgs_with_text(page), [])
+            self.assertEqual(svgkit.scaled_svgs_in(page), [])
+
+    def test_labels_render_12px_and_names_14px(self):
+        css = self.page.split("<style>", 1)[1].split("</style>", 1)[0]
+        self.assertEqual(set(svgkit.font_sizes(css)), {"var(--sc-m)", "var(--sc-n)"})
+        self.assertIn("--sc-m:calc(12px / var(--sc-z))", css)
+        self.assertIn("--sc-n:calc(14px / var(--sc-z))", css)
+        self.assertIn(".scg{--sc-z:1;", css, "a sample page has no zoom")
+
+    def test_no_box_inside_the_scorecard_and_no_overlap(self):
+        for page in (self.page, self.demo):
+            css = page.split("<style>", 1)[1].split("</style>", 1)[0]
+            self.assertEqual(svgkit.boxes_in_frames(page, css), [])
+            self.assertNotIn('class="chip"', page.split("For your engineers", 1)[0])
+        self.assertNotIn("position:absolute", svgkit.SCORECARD_CSS)
+
+    def test_no_legacy_svgkit_primitive_draws_on_the_page(self):
+        import warnings
+
+        for page in (self.page, self.demo):
+            self.assertEqual(svgkit.legacy_in(page), [])
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            render.to_html(acme(), "t", {}, True, {})
+            render.to_html(acme_sample(), "Acme roadmap", {}, True, {})
+
+    def test_status_dots_only_beside_their_words(self):
+        for page in (self.page, self.demo):
+            for row in re.findall(r'<div class="sc-r">.*?</span></span></div>', page):
+                for word in ("landed", "stalled"):
+                    if f'class="ac {word}"' in row:
+                        self.assertIn(f'<span class="st {word}">{word}</span>', row)
 
     def test_green_and_red_only_beside_their_words(self):
         for page in (self.page, self.demo):
@@ -666,14 +712,10 @@ class Page(unittest.TestCase):
                 self.assertNotIn(f"st {word}", rest)
         self.assertIn('<span class="st landed">landed</span>', self.demo)
 
-    def test_each_visual_states_its_answer(self):
+    def test_the_scorecard_states_its_answer(self):
         labels = re.findall(r'role="img" aria-label="([^"]+)"', self.page)
-        self.assertEqual(len(labels), 2)
-        for label in labels:
-            self.assertEqual(
-                label,
-                "Supplier price sync is circled to do first because it has no landing brief; six of eight projects have both a complete plan and linked work.",
-            )
+        self.assertEqual(labels, ["Do Supplier price sync first: it has no landing brief. Five of eight projects have all four in place."])
+        self.assertEqual(labels, [render.scorecard_label(acme_sample())])
 
     def test_public_copy_uses_plain_words(self):
         for page in (self.page, self.demo):
@@ -713,9 +755,9 @@ class Page(unittest.TestCase):
         self.assertIn("<span>Portfolio review</span>", header)
         self.assertNotIn("bet-portfolio-review", header)
         fold = self.page.split("<summary>For your engineers</summary>", 1)[1]
-        self.assertIn("<code>bet-portfolio-review</code> 0.3.2", fold)
+        self.assertIn("<code>bet-portfolio-review</code> 0.3.3", fold)
         md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8")
-        self.assertIn("Skill: bet-portfolio-review 0.3.2.", md.split("## For your engineers", 1)[1])
+        self.assertIn("Skill: bet-portfolio-review 0.3.3.", md.split("## For your engineers", 1)[1])
 
     def test_no_internal_words_in_public_copy(self):
         banned = re.compile(r"\b(records?|bets?|the bar|PRDs?|ARR|tokens?)\b", re.I)
@@ -727,7 +769,7 @@ class Page(unittest.TestCase):
 
     def test_svgkit_matches_its_landing_loop_pin(self):
         pin = json.loads((SKILL / "VENDORED.json").read_text(encoding="utf-8"))["landing-loop"]
-        self.assertEqual(pin["commit"], "5d01756d08ab3eb92b457c3286729791df6bcf5f")
+        self.assertEqual(pin["commit"], "78784efd2ecd5282f6ec264e545ce2075e459be2")
         self.assertEqual(set(pin["files"]), {"scripts/vendor/svgkit.py"})
         for rel, info in pin["files"].items():
             digest = hashlib.sha256((SKILL / rel).read_bytes()).hexdigest()

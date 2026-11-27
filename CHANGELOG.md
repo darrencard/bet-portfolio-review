@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.3 (2026-11-27)
+
+- The page's picture is now the scorecard, in the grammar of the outcome scorecard on dacard.ai/update: one frame of HTML rows split by hairlines, one row per project in rank order. Each row prints the name, four pips (plan, owner, work linked, cost budget; filled when in place), the figure `3 of 4 in place`, and the next step as a muted check word, with DO FIRST in ink on rank 1. The pips are named once in the column head and once in the caption. Labels and words render 12px Geist Mono, names 14px Geist; no text in any SVG, no viewBox, no boxed chip. The two-axis grid (wide and tall SVGs) is gone.
+- Each pip is drawn on its own, so an empty pip sits where its part is missing (Auto match has no owner, SMS reminders no work). The cost budget is in place when the landing brief states it and the parser lists no problem with either of its two lines; a fixed-code brief that states none counts.
+- Steps done in each project's detail print as words (done in ink, not yet muted), not boxed chips.
+- svgkit 1.2.0, vendored byte-identical from landing-loop 78784ef (the commit that last changed `tools/svgkit.py`; rollout recipe at c6c47e7) and pinned in `VENDORED.json`.
+- Tests copied from the rollout recipe: no text inside an SVG, no scaled picture, only the 12px and 14px sizes in the frame, no box in the frame and no chip before the engineers' fold, no legacy svgkit primitive (rendered with DeprecationWarning as an error), status dots only beside their words, one frame with one row per project and each figure line printed exactly, the aria-label equal to the verdict, and nothing drawn that the page does not print.
+- Plain words in the README and SKILL.md: project, target, the project file, and the landing brief defined once as a one-page plan: what good looks like, by when, at what cost. SKILL.md tells Claude to use the user's own word if they say bet. Keys, file names and flags are unchanged.
+
 ## 0.3.2 (2026-11-27)
 
 - The HTML page follows the Landing Loop sample anatomy, built like did-it-land's and eval-kit's: the shared header (mark, DACARD, skill, date, version, blue Illustrative tag), the verdict as the heading ("Five of eight projects are ready. Start with Supplier price sync: it has no landing brief."), the signature picture, one next step with its owner in brass and when it is due, then every project in two columns and the work linked to no project. The evidence ledger and an engineers' fold (gap codes, landing_brief.py's own words, source rows, flags, the record key) are folded. No call to action: the page is the skill's own output.

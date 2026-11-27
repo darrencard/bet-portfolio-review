@@ -6,14 +6,17 @@ The HTML uses the Leader Report's own stylesheet and fonts, read from its vendor
 byte-identical from landing-loop), so it sits in the Landing Loop's one visual family. Markdown is the plain-text twin.
 
 The page reads top down for someone who has never seen the loop: the shared header, the verdict as the heading,
-the signature picture (each project placed by whether its plan is complete and whether work is linked to it, the
-one to do first circled), then one thing to do next with its owner in brass. Every project follows in two columns,
+the scorecard (one row per project, ranked: four pips for plan, owner, work linked and cost budget, the count in place,
+and the next step, DO FIRST on the first), then one thing to do next with its owner in brass. Every project follows in two columns,
 then the work linked to no project. The evidence ledger and everything for engineers (gap codes, the parser's own
 words, file names, flags, the record key) sit in folds. Public copy uses plain words: project, target, landing brief
 (defined at first use), build plan.
 
+The scorecard follows the scorecard grammar (svgkit 1.2.0): HTML rows split by hairlines, Geist Mono 12px for labels,
+figures and words, Geist 14px for names, and fixed-size pips with no text in them. Words are text, never boxed chips.
+
 Colour means one thing each: brass for the person who owns the next step, green and red only inside the printed
-words landed and stalled. The picture draws only names the page prints, and its aria-label states the answer.
+words landed and stalled. The scorecard draws no figure the page does not print, and its aria-label states the answer.
 
 Every number printed here comes from score.py. Every piece of text read from a source is escaped: in Markdown,
 pipes, angle brackets and line breaks are neutralised; in HTML, everything goes through html.escape.
@@ -353,8 +356,8 @@ main.solo{margin-left:0}
 .solo h1{font-size:clamp(34px,4.6vw,60px);line-height:1;letter-spacing:-.04em;max-width:22ch;margin-bottom:20px}
 .solo .lede{margin-bottom:28px}
 .solo .lede b{color:var(--t1);font-weight:500}
-.cols{display:grid;grid-template-columns:minmax(0,640px) minmax(260px,1fr);gap:28px 48px;align-items:start}
-.side{display:grid;gap:24px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px 48px;align-items:start;margin-top:28px}
+.scg .pips{display:flex;gap:4px}.scg .pips svg{width:8px}
 .next{display:grid;gap:10px;border:1px solid var(--brass);border-radius:12px;padding:20px 22px;background:var(--brass-bg)}
 .next>b{font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
 .next p{margin:0;font-size:16px;line-height:1.5;color:var(--t1)}
@@ -375,8 +378,8 @@ main.solo{margin-left:0}
 .project h3 .rk{font:400 11px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
 .project .figs>div:first-child{border-top:0}
 .nos{white-space:nowrap;font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip.off{color:var(--t3);border-style:dashed}
+.steps{display:flex;flex-wrap:wrap;gap:4px 16px;font:400 12px/18px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.steps .done{color:var(--t1)}.steps .todo{color:var(--t3)}
 .solo details{margin-top:20px}
 .solo details .tablewrap{margin-top:12px}
 .note{max-width:80ch;font-size:12.5px;line-height:1.6;color:var(--t2);margin:12px 0 0}
@@ -411,110 +414,79 @@ def status_html(r: Review) -> str:
 
 
 def steps_html(r: Review, loop: dict[str, Progress | None] | None) -> str:
+    """Which steps the project's file holds, as words: done in ink, not yet muted. Text, never a boxed chip."""
     if loop is None:
         return '<span class="nos">not read</span>'
     p = loop.get(r.bet.id) or progress({})  # no record yet reads the same as an empty one, so a rerun prints the same page
-    chips = [f'<span class="chip{"" if p[k] else " off"}">{word}</span>' for k, word in STEPS]
+    words = [f'<span class="{"done" if p[k] else "todo"}">{word}</span>' for k, word in STEPS]
     if p["landed_status"]:
-        chips.append(f'<span class="st {h(p["landed_status"])}">{h(p["landed_status"])}</span>')
+        words.append(f'<span class="st {h(p["landed_status"])}">{h(p["landed_status"])}</span>')
     else:
-        chips.append(f'<span class="chip{"" if p["landed"] else " off"}">result</span>')
-    return f'<span class="chips">{"".join(chips)}</span>'
+        words.append(f'<span class="{"done" if p["landed"] else "todo"}">result</span>')
+    return f'<span class="steps">{"".join(words)}</span>'
 
 
-# The signature picture: plan complete? across, work linked? down, one dot per project, the first circled.
+# The scorecard: one row per project, in rank order. Four pips (plan, owner, work linked, cost budget), filled when in
+# place; the count as the figure; the next step as a check word, and DO FIRST in ink on rank 1.
+
+PIPS = ("plan", "owner", "work linked", "cost budget")
+BUDGET_PARTS = ("tokens per task", "price per token")
 
 
-def _wrap(text: str, chars: int) -> list[str]:
-    lines: list[str] = []
-    for word in text.split():
-        if lines and len(lines[-1]) + 1 + len(word) <= chars:
-            lines[-1] += " " + word
-        else:
-            lines.append(word)
-    return lines or [""]
+def in_place(r: Review) -> tuple[bool, bool, bool, bool]:
+    """Plan, owner, work linked, cost budget: which are in place. The plan is a complete landing brief. The cost
+    budget is in place when the brief states it, the parser listing no problem with either of its two lines (a
+    fixed-code brief states none, which counts)."""
+    budget = "no-brief" not in r.gaps and not any(part in x.lower() for x in r.problems for part in BUDGET_PARTS)
+    return r.passed["brief"], r.passed["owner"], r.passed["linked_work"], budget
 
 
-def _ring(x: float, y: float, r: float) -> str:
-    return f'<circle cx="{sk.num(x)}" cy="{sk.num(y)}" r="{sk.num(r)}" fill="none" stroke="{sk.INK}" stroke-width="{sk.num(sk.STROKE)}"/>'
+def next_word(r: Review) -> str:
+    """The next step in two or three words, from the same gap order as score.next_step."""
+    for gap in r.gaps:
+        if gap == "no-owner":
+            return "name an owner"
+        if gap == "no-brief":
+            return "write the landing brief"
+        if gap == "brief-problems":
+            return "fix the landing brief"
+        if gap == "no-work" and r.status != "landed":
+            return "link work or cut"
+    if "date-passed" in r.gaps:
+        return "decide what next"
+    if r.status is None and "spec" not in (r.record or {}):
+        return "check the build plan"
+    if r.status is None:
+        return "read the result"
+    return {"landed": "choose what next", "watch": "take the next reading"}.get(r.status, "change or stop")
 
 
-def _upright(x: float, y: float, text: str) -> str:
-    """A row label turned to read upwards, centred on (x, y)."""
-    return f'<g transform="translate({sk.num(x)} {sk.num(y)}) rotate(-90)">{sk.label(0, 0, text, anchor="middle")}</g>'
+def scorecard_row(r: Review, first: bool) -> str:
+    marks = in_place(r)
+    n = sum(marks)
+    picture = "".join(sk.pips(1 if ok else 0, 1) for ok in marks)
+    word = (sk.status_mark(r.status) if r.status else "") + (sk.check_word("do first", ink=True) if first else "") + sk.check_word(next_word(r))
+    return sk.sc_row(r.bet.name, picture=f'<span class="pips">{picture}</span>', figure=sk.figure_line(f"{n} of {len(PIPS)} in place"), word=word)
 
 
-def _cells(pf: Portfolio) -> dict[tuple[bool, bool], list[Review]]:
-    """Projects by (plan complete, work linked), each list in rank order."""
-    cells: dict[tuple[bool, bool], list[Review]] = {(p, w): [] for w in (True, False) for p in (False, True)}
-    for r in pf.reviews:
-        cells[(r.passed["brief"], r.passed["linked_work"])].append(r)
-    return cells
-
-
-def grid(pf: Portfolio, variant: str) -> str:
-    """The signature picture. 640 wide beside the next step on desktop, 340 wide on phones, where names wrap."""
-    wide = variant == "wide"
-    width = 640.0 if wide else float(sk.TALL)
-    gut, top = 24.0, 30.0
-    col = (width - gut) / 2
-    chars = 99 if wide else int((col - 40) / sk.label_width("x"))
-    first = pf.reviews[0]
-    cells = _cells(pf)
-
-    def item_height(r: Review) -> float:
-        lines = len(_wrap(r.bet.name.upper(), chars))
-        return lines * 15 + (24 if r is first and not wide else 0) + 11
-
-    def cell_height(rs: list[Review]) -> float:
-        return 30 + (sum(item_height(r) for r in rs) if rs else 20)
-
-    rows = {w: max(64.0, cell_height(cells[(False, w)]), cell_height(cells[(True, w)])) for w in (True, False)}
-    height = top + rows[True] + rows[False] + 2
-    y0 = {True: top, False: top + rows[True]}
-    bottom = height - 1
-    parts = [sk.zone(gut + col, top, col, rows[True])]  # plan and work both in place: shaded neutral, never green
-    parts += [sk.rule(gut, y, width, y) for y in (top, top + rows[True], bottom)]
-    parts += [sk.rule(x, top, x, bottom) for x in (gut, gut + col, width)]
-    parts.append(sk.label(gut + 14, 18, "Plan incomplete"))
-    parts.append(sk.label(gut + col + 14, 18, "Plan complete", tone=sk.INK2))
-    parts.append(_upright(10, top + rows[True] / 2, "Work linked"))
-    parts.append(_upright(10, top + rows[True] + rows[False] / 2, "No work"))
-    for (p, w), rs in cells.items():
-        x = gut + (col if p else 0) + 14
-        y = y0[w] + 28
-        if not rs:
-            parts.append(sk.label(x, y, "None", tone=sk.LINE3))
-            continue
-        for r in rs:
-            lines = _wrap(r.bet.name.upper(), chars)
-            cy = y - 4
-            parts.append(sk.point(x + 5, cy, r=5) if r.bet.owner else sk.hollow(x + 5, cy, r=4.5))
-            parts += [sk.label(x + 22, y + i * 15, line, tone=sk.INK) for i, line in enumerate(lines)]
-            if r is first:
-                parts.append(_ring(x + 5, cy, 10))
-                last = y + (len(lines) - 1) * 15
-                if wide:
-                    parts.append(sk.chip(x + 34 + sk.label_width(lines[-1]), last - 13, "Do first", tone=sk.INK))
-                else:
-                    parts.append(sk.chip(x + 22, last + 6, "Do first", tone=sk.INK))
-            y += item_height(r)
-    return sk.frame("".join(parts), label=grid_label(pf, cells), height=height, width=width, variant=variant)
-
-
-def grid_label(pf: Portfolio, cells: dict[tuple[bool, bool], list[Review]]) -> str:
-    """The picture's answer in one sentence."""
+def scorecard_label(pf: Portfolio) -> str:
+    """The scorecard's answer in one sentence."""
     first = pf.reviews[0]
     why = first_why(first)
-    lead = f"{first.bet.name} is circled to do first" + (f" because {why}" if why else "")
-    both = len(cells[(True, True)])
-    return f"{lead}; {count_word(both).lower()} of {count_word(len(pf.reviews)).lower()} projects have both a complete plan and linked work."
+    full = sum(1 for r in pf.reviews if all(in_place(r)))
+    lead = f"Do {first.bet.name} first" + (f": {why}" if why else "")
+    return f"{lead}. {count_word(full)} of {count_word(len(pf.reviews)).lower()} projects have all four in place."
 
 
-GRID_CAPTION = (
-    "Each dot is one project, placed by whether its landing brief is complete and whether any work is linked to it. "
-    "The shaded corner has both. A hollow dot has no owner. The ring marks the project to do first."
-)
+def scorecard(pf: Portfolio, illustrative: bool) -> str:
+    return sk.sc_frame(
+        [scorecard_row(r, i == 0) for i, r in enumerate(pf.reviews)],
+        label=scorecard_label(pf),
+        title="In place",
+        head=["Project", "Plan · owner · work linked · cost budget", "In place", "Next step"],
+        caption="One row per project, ranked: the four dots are plan, owner, work linked and cost budget, filled when in place. The first row needs work first.",
+        illustrative=illustrative,
+    )
 
 
 def next_box(r: Review) -> str:
@@ -589,12 +561,9 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
         "A project is a piece of work you expect to move a number. Each one is checked against its <b>landing brief</b>, a one-page plan: "
         "what good looks like, by when, at what cost. Ready means one owner, a complete landing brief and work linked to it."
     )
-    pic = sk.figure(grid(pf, "wide"), grid(pf, "tall"), caption=GRID_CAPTION, illustrative=illustrative) if pf.reviews else ""
-    side = (next_box(pf.reviews[0]) if pf.reviews else "") + glance(pf)
-    cover = (
-        f'<section class="slide cover">{header}<h1>{h(verdict(pf))}</h1><p class="lede">{lede}</p>'
-        f'<div class="cols"><div>{pic}</div><div class="side">{side}</div></div></section>'
-    )
+    pic = scorecard(pf, illustrative) if pf.reviews else ""
+    lead = next_box(pf.reviews[0]) if pf.reviews else ""
+    cover = f'<section class="slide cover">{header}<h1>{h(verdict(pf))}</h1><p class="lede">{lede}</p>{pic}<div class="cols">{lead}{glance(pf)}</div></section>'
     every = section(
         "Projects",
         "Every project, in order",
@@ -620,7 +589,7 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
     )
     return (
         '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>Portfolio review: {h(title)}</title><style>{floor_fonts(stylesheet() + sk.CSS + PAGE_CSS)}</style></head><body><main class="solo">'
+        f'<title>Portfolio review: {h(title)}</title><style>{floor_fonts(stylesheet() + sk.CSS + sk.SCORECARD_CSS + PAGE_CSS)}</style></head><body><main class="solo">'
         f"{cover}{every}{orphans}{detail}"
         '<p class="foot">A number moving is not proof that the project moved it. This review says whether each project is set up to be judged, '
         "not whether it worked. Every figure is computed in code from the files named.</p></main></body></html>\n"

@@ -176,7 +176,7 @@ Link or cut: 2 items with no project, 1 item linked to a project not on the road
 
 ## For your engineers
 
-Skill: bet-portfolio-review 0.3.2. Files read: bets.csv (the roadmap), work.csv (the work list), landing/*.json (the project files).
+Skill: bet-portfolio-review 0.3.3. Files read: bets.csv (the roadmap), work.csv (the work list), landing/*.json (the project files).
 
 - Supplier price sync (ACME-8): bets.csv row 9.
 - Auto match (ACME-5): briefs/auto-match.md.
