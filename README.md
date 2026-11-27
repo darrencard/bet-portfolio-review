@@ -42,7 +42,7 @@ A test runs that exact line on a fresh copy and checks the output matches the co
 
 ## Step 01 of the Landing Loop: Decide
 
-Eleven skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 01, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
+Eleven skills, the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) among them, work on one landing brief per bet and share one record per bet, `landing/<bet-slug>.json`. This skill is step 01, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
 
 ## What it checks
 
