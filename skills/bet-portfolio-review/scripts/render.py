@@ -44,7 +44,7 @@ import svgkit as sk  # noqa: E402  (vendored, unchanged; see VENDORED.json)
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "leader-report-template.html"
 NAME = "Portfolio review"  # the page prints its plain name; the code name sits in the engineers' fold
 CODE_NAME = "bet-portfolio-review"
-MIN_FONT_PX = 11  # no text on the page prints smaller, at any width
+MIN_FONT_PX = 12  # no text on the page prints smaller, at any width
 Progress = dict[str, Any]
 
 NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -318,6 +318,28 @@ def files_read(sources: dict[str, str] | None) -> str:
     return ", ".join(f"{v} ({k})" for v, k in named if v) or "none named"
 
 
+ISO_DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+TAG = re.compile(r"(<[^>]*>)")
+RAW = re.compile(r"<(style|title|code|script)\b", re.I)
+
+
+def nowrap_dates(body: str) -> str:
+    """Wrap every ISO date in the page's text in white-space:nowrap, so "2026-09-07" never breaks at a hyphen.
+    Only text between tags changes: attributes (aria-label, title) and style, title, code and script keep theirs."""
+    parts = TAG.split(body)
+    skip = None
+    for i, part in enumerate(parts):
+        if i % 2:  # a tag
+            m = RAW.match(part)
+            if m:
+                skip = m.group(1).lower()
+            elif skip and part.lower().startswith(f"</{skip}"):
+                skip = None
+        elif not skip:
+            parts[i] = ISO_DATE.sub(r'<span class="nd">\g<0></span>', part)
+    return "".join(parts)
+
+
 def floor_fonts(css: str) -> str:
     """Every font size in the page's CSS at MIN_FONT_PX or more. The vendored template and svgkit stay byte-identical;
     their smaller label sizes are raised here, as the page is written. A line height (after the slash) is left alone."""
@@ -359,25 +381,25 @@ main.solo{margin-left:0}
 .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px 48px;align-items:start;margin-top:28px}
 .scg .pips{display:flex;gap:4px}.scg .pips svg{width:8px}
 .next{display:grid;gap:10px;border:1px solid var(--brass);border-radius:12px;padding:20px 22px;background:var(--brass-bg)}
-.next>b{font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.next>b{font:400 12px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
 .next p{margin:0;font-size:16px;line-height:1.5;color:var(--t1)}
 .next p span{color:var(--t2)}
-.who{display:flex;flex-wrap:wrap;gap:4px 24px;font:400 11.5px/18px var(--mono);color:var(--brass)}
-.who i{font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
+.who{display:flex;flex-wrap:wrap;gap:4px 24px;font:400 12px/18px var(--mono);color:var(--brass)}
+.who i{font-style:normal;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
 .who .d{color:var(--t2)}
 .figs{margin:0;display:grid}
 .figs>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 16px;border-top:1px solid var(--line);padding:10px 0}
-.figs dt{font:400 11px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.figs dt{font:400 12px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
 .figs dd{margin:0;font-size:13.5px;line-height:1.55;color:var(--t2)}
 .figs dd b{color:var(--t1);font-weight:500}
 .figs .own dt{color:var(--brass)}
-.figs .own .o{display:block;margin-top:4px;font:400 11.5px/18px var(--mono);color:var(--brass)}
+.figs .own .o{display:block;margin-top:4px;font:400 12px/18px var(--mono);color:var(--brass)}
 .projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--s1)}
 .project{padding:20px 24px 14px;box-shadow:-1px 0 0 var(--line),0 -1px 0 var(--line)}
 .project h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;font:600 18px/1.25 var(--display);letter-spacing:-.02em;color:var(--t1)}
-.project h3 .rk{font:400 11px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
+.project h3 .rk{font:400 12px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
 .project .figs>div:first-child{border-top:0}
-.nos{white-space:nowrap;font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.nos{white-space:nowrap;font:400 12px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
 .steps{display:flex;flex-wrap:wrap;gap:4px 16px;font:400 12px/18px var(--mono);letter-spacing:.06em;text-transform:uppercase}
 .steps .done{color:var(--t1)}.steps .todo{color:var(--t3)}
 .solo details{margin-top:20px}
@@ -395,6 +417,7 @@ td.src{white-space:normal;min-width:96px}
 .solo h1,.solo .lede,.solo .next,.solo .slide p,.solo .slide li,.solo .sc-c,.sk figcaption{max-width:none}
 .solo .slide p,.solo .slide li,.solo .sc-c{text-wrap:pretty}
 .solo .cover .cols{grid-template-columns:minmax(0,1fr)}
+.nd{white-space:nowrap}
 """
 
 
@@ -593,8 +616,8 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
     return (
         '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         f'<title>Portfolio review: {h(title)}</title><style>{floor_fonts(stylesheet() + sk.CSS + sk.SCORECARD_CSS + PAGE_CSS)}</style></head><body><main class="solo">'
-        f"{cover}{every}{orphans}{detail}"
-        '<p class="foot">A number moving is not proof that the project moved it. This review says whether each project is set up to be judged, '
+        + nowrap_dates(f"{cover}{every}{orphans}{detail}")
+        + '<p class="foot">A number moving is not proof that the project moved it. This review says whether each project is set up to be judged, '
         "not whether it worked. Every figure is computed in code from the files named.</p></main></body></html>\n"
     )
 

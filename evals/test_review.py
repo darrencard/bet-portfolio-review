@@ -743,25 +743,35 @@ class Page(unittest.TestCase):
         for word in (" bet ", " bets ", "the line.", "02 spec", "## do these first"):
             self.assertNotIn(word, md, word)
 
-    def test_no_text_smaller_than_11px(self):
+    def test_no_text_smaller_than_12px(self):
         for page in (self.page, self.demo):
             css = "".join(re.findall(r"<style>(.*?)</style>", page, re.S))
             decls = re.findall(r"font(?:-size)?:[^;}]*", css)
             self.assertTrue(decls)
             sizes = [float(n) for d in decls for n in re.findall(r"(?<![/\d.])(\d+(?:\.\d+)?)px", d)]
-            self.assertGreaterEqual(min(sizes), 11, "a font size below 11px")
-            self.assertNotRegex(page, r'font-size="(\d|10)(\.\d+)?"', "an SVG label below 11px")
+            self.assertGreaterEqual(min(sizes), 12, "a font size below 12px")
+            self.assertNotRegex(page, r'font-size="(\d|1[01])(\.\d+)?"', "an SVG label below 12px")
         template = (SKILL / "assets" / "leader-report-template.html").read_text(encoding="utf-8")
         self.assertIn("font:400 10px/16px var(--mono)", template, "the template stays as vendored; the page raises its sizes")
+
+    def test_dates_never_break(self):
+        for page in (self.page, self.demo):
+            self.assertIn(".nd{white-space:nowrap}", page)
+            body = re.sub(r'<span class="nd">\d{4}-\d{2}-\d{2}</span>', "", page.split("<body>", 1)[1])
+            self.assertEqual(re.findall(r"\d{4}-\d{2}-\d{2}", re.sub(r"<[^>]*>", " ", body)), [])
+        self.assertEqual(
+            render.nowrap_dates('<p title="2026-01-02">by 2026-01-02</p><code>2026-01-02</code>'),
+            '<p title="2026-01-02">by <span class="nd">2026-01-02</span></p><code>2026-01-02</code>',
+        )
 
     def test_header_prints_the_plain_name_and_the_fold_the_code_name(self):
         header = re.search(r'<header class="sk-hdr">.*?</header>', self.page, re.S).group(0)
         self.assertIn("<span>Portfolio review</span>", header)
         self.assertNotIn("bet-portfolio-review", header)
         fold = self.page.split("<summary>For your engineers</summary>", 1)[1]
-        self.assertIn("<code>bet-portfolio-review</code> 0.3.4", fold)
+        self.assertIn("<code>bet-portfolio-review</code> 0.3.5", fold)
         md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8")
-        self.assertIn("Skill: bet-portfolio-review 0.3.4.", md.split("## For your engineers", 1)[1])
+        self.assertIn("Skill: bet-portfolio-review 0.3.5.", md.split("## For your engineers", 1)[1])
 
     def test_no_internal_words_in_public_copy(self):
         banned = re.compile(r"\b(records?|bets?|the bar|PRDs?|ARR|tokens?)\b", re.I)

@@ -2,6 +2,8 @@
 
 A free Claude skill that scores every project on your roadmap against its landing brief (a one-page plan: what good looks like, by when, at what cost) and ranks what to fix first.
 
+A bet is a project you expect to move a number; its bar is the target its landing brief sets.
+
 **Why it matters:** a project with no metric, owner or cost budget cannot be called landed or stalled, and work tied to no project is spend no one is accountable for. This review finds both, live from your Linear or Jira roadmap (a CSV when there is no connector), with one next step per project.
 
 **How it works:** Python computes every score and count, with a source for each. Brief completeness is the landing brief parser's own check, word for word, and landed, watch or stalled comes only from did-it-land. The model never does the arithmetic, and a rewrite that adds a number, changes a status word or claims cause fails the check.

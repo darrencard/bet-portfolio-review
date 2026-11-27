@@ -1,17 +1,17 @@
 ---
 name: bet-portfolio-review
-description: Scores a roadmap of projects (some teams call them bets; live from Linear projects and issues or Jira search results, or a CSV or Jira CSV export) against each project's landing brief, a one-page plan (problem, metric, target, direction and date, non-goals, cost budget, the line between fixed code and a model call). Flags projects with no brief, metric, owner, non-goals or cost budget, and work linked to no project, then writes a ranked review in Markdown and HTML (the Leader Report's style) with each project's gaps and one next step, and writes the portfolio step of each project's Landing Loop project file. Every figure is computed in code. Use when the user asks to review a roadmap, a project or bet portfolio or a set of Linear projects or Jira epics for missing briefs, metrics, owners or budgets, to find work not tied to any project, or to rank which projects need attention first. Not for writing a single brief (use landing-brief) or building a leadership update deck (use product-engineering-update).
+description: Scores a roadmap of projects (live from Linear projects and issues or Jira search results, or a CSV or Jira CSV export) against each project's landing brief, a one-page plan (problem, metric, target, direction and date, non-goals, cost budget, the line between fixed code and a model call). Flags projects with no brief, metric, owner, non-goals or cost budget, and work linked to no project, then writes a ranked review in Markdown and HTML (the Leader Report's style) with each project's gaps and one next step, and writes the portfolio step of each project's Landing Loop project file. Every figure is computed in code. Use when the user asks to review a roadmap, a project portfolio or a set of Linear projects or Jira epics for missing briefs, metrics, owners or budgets, to find work not tied to any project, or to rank which projects need attention first. Not for writing a single brief (use landing-brief) or building a leadership update deck (use product-engineering-update).
 license: MIT. See LICENSE in the repository root.
 metadata:
   author: Dacard
-  version: "0.3.4"
+  version: "0.3.5"
 ---
 
 # Portfolio review
 
 A roadmap is a set of projects. This skill checks each project against its landing brief (a one-page plan: what good looks like, by when, at what cost), finds the work that belongs to no project, and ranks what needs attention first, with one next step each.
 
-In what you write, say project, target, landing brief and project file. If the user calls a project a bet, use their word. Keep keys, file names, flags and code identifiers as they are (`landing/<bet-slug>.json`, `bets.csv`, `--jira-bet-type`).
+In what you write, say project, target, landing brief and project file. Use the user's word, project or bet; the record key stays `bet`. Keep keys, file names, flags and code identifiers as they are (`landing/<bet-slug>.json`, `bets.csv`, `--jira-bet-type`).
 
 Everything runs locally. The scripts read files and write files. They make no network calls and install nothing. Live data comes through the connectors already in this session (Linear, Jira), saved to files as they stand.
 
@@ -51,7 +51,7 @@ Live first. Use a file only when the team's tracker has no connector in this ses
 - **Linear.** With the Linear connector, call `list_projects` and save the JSON as it stands to `projects.json`; call `list_issues` for the same projects and save it to `issues.json`. A Linear project is one project here. Its lead is the owner. Its description holds the brief.
 - **Jira CSV.** Export the issues to CSV, with the Description and Parent fields. Rows of type Epic are projects (pass `--jira-bet-type` if the team uses another type); every other row is work.
 
-The brief is the block under a "Landing brief" heading, the same schema as the landing-brief skill in the Product & Technology Leader Report: Problem, Metric, Bar, Better, By, Non-goals, Tokens per task, Price per token, The line, Decides the next step.
+The brief is the block under a "Landing brief" heading, the same schema as the landing-brief skill in the Product & Technology Leader Report: `Problem`, `Metric`, `Bar`, `Better`, `By`, `Non-goals`, `Tokens per task`, `Price per token`, `The line`, `Decides the next step`.
 
 ### 2. Run the review
 
