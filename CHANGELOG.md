@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 (2026-11-27)
+
+- The HTML page follows the Landing Loop sample anatomy, built like did-it-land's and eval-kit's: the shared header (mark, DACARD, skill, date, version, blue Illustrative tag), the verdict as the heading ("Five of eight projects are ready. Start with Supplier price sync: it has no landing brief."), the signature picture, one next step with its owner in brass and when it is due, then every project in two columns and the work linked to no project. The evidence ledger and an engineers' fold (gap codes, landing_brief.py's own words, source rows, flags, the record key) are folded. No call to action: the page is the skill's own output.
+- The signature picture: a two-axis grid, plan complete across and work linked down, one dot per project with its name, a hollow dot for no owner, the project to do first circled and tagged. The corner with both is shaded neutral, never green. A 640 wide variant beside the next step on desktop and a 340 wide one for phones; its aria-label states the answer. Drawn with svgkit, vendored byte-identical from landing-loop 5d01756 and pinned in `VENDORED.json` under `landing-loop`.
+- Plain words in the page and the Markdown twin: project, target, landing brief (defined at first use), build plan checked, quality tested, AI usage per task, AI price per unit. The stored `portfolio` key and the JSON keys are unchanged apart from `tool`; the record keeps the next step's original text.
+- Gap labels: "Landing brief incomplete" and "Date passed, target not met".
+- Tests: the picture draws only names the page prints and no figure of its own, green and red appear only beside the words landed and stalled, the aria-label states the answer, public copy uses the plain words, the page follows the anatomy, and the vendored svgkit matches its pin.
+
 ## 0.3.1 (2026-11-26)
 
 - README: install through the Landing Loop bundle (`/plugin marketplace add darrencard/landing-loop`, then `/plugin install bet-portfolio-review@landing-loop`), with the paste-in prompt kept for a standalone install.

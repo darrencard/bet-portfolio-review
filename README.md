@@ -24,10 +24,8 @@ Install the bet-portfolio-review skill from https://github.com/darrencard/bet-po
 **See it first:** the sample page is [examples/acme/bet-portfolio-review.html](examples/acme/bet-portfolio-review.html), reviewing the illustrative Acme roadmap. `--demo` runs a second, smaller fixture (`evals/fixtures/acme/`, its own made-up bets, not the sample's roadmap) in one command: `python3.12 skills/bet-portfolio-review/scripts/review.py --demo --out run`.
 
 ```text
-Do these first
-1. Supplier price sync (ACME-8): Owner: Lead, Quoting squad. Write the landing brief.
-2. Auto match (ACME-5): Name one owner for this bet.
-3. SMS reminders (ACME-7): Link the work that delivers this bet, or cut the bet.
+Five of eight projects are ready. Start with Supplier price sync: it has no landing brief.
+What to do next: write the landing brief. Owner: Lead, Quoting squad. When: before build starts.
 ```
 
 ## Sample
@@ -88,6 +86,6 @@ Templates for the two CSVs are in `skills/bet-portfolio-review/assets/`. Linear 
 - The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.11 or later; the scripts check first and stop with a plain message on anything older (try python3.12). Standard library only. MIT licensed. Version 0.3.1.
+Python 3.11 or later; the scripts check first and stop with a plain message on anything older (try python3.12). Standard library only. MIT licensed. Version 0.3.2.
 
 Claude and Claude Code are trademarks of Anthropic, PBC. These skills are independent and not affiliated with or endorsed by Anthropic.

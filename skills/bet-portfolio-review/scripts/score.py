@@ -34,9 +34,9 @@ TOTAL = sum(WEIGHTS.values())
 LABELS = {
     "no-owner": "No owner",
     "no-brief": "No landing brief",
-    "brief-problems": "Brief does not parse",
+    "brief-problems": "Landing brief incomplete",
     "no-work": "No work linked",
-    "date-passed": "Date passed, no result met the bar",
+    "date-passed": "Date passed, target not met",
     "no-result": "No result yet",
 }
 ORDER = list(LABELS)

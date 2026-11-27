@@ -4,7 +4,7 @@ description: Scores a roadmap of bets (live from Linear projects and issues or J
 license: MIT. See LICENSE in the repository root.
 metadata:
   author: Dacard
-  version: "0.3.1"
+  version: "0.3.2"
 ---
 
 # Bet portfolio review
@@ -64,7 +64,7 @@ It writes `run/review.md`, `run/review.html` and `run/review.json`, and the `por
 
 ### 3. Show it
 
-Show "Do these first", the ranked table and the work linked to no bet from `review.md`, as written. Point the user to `review.html`: one self-contained page in the Leader Report's style (its stylesheet and fonts, mono labels, hairline rows, colour for status only, brass for owners). The Loop column shows which steps each bet's record holds: spec, evals, cost, and the result's status word when did-it-land has written one. Do not change a score, a status word or a next step.
+Show the verdict, "What to do next" and the ranked table from `review.md`, as written. Point the user to `review.html`: one self-contained page in the Leader Report's style and the Landing Loop's one visual family. It opens with the verdict as its heading and a grid that places each project by whether its landing brief is complete and whether work is linked to it, the one to do first circled; then one next step with its owner in brass, every project in two columns, and the work linked to no project. The evidence ledger and the engineering detail (gap codes, the parser's own words, files, flags) are folded. Steps done shows which steps each project's file holds: build plan checked, quality tested, cost checked, and the result's status word when did-it-land has written one. Do not change a score, a status word or a next step.
 
 ### 4. Check any rewrite
 

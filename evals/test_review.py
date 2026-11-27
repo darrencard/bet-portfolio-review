@@ -39,6 +39,7 @@ SKILL = ROOT / "skills" / "bet-portfolio-review"
 SCRIPTS = SKILL / "scripts"
 ACME = HERE / "fixtures" / "acme"
 sys.path.insert(0, str(SCRIPTS))
+sys.path.insert(0, str(SCRIPTS / "vendor"))
 
 import landing_brief  # noqa: E402
 import load  # noqa: E402
@@ -46,6 +47,7 @@ import loop  # noqa: E402
 import render  # noqa: E402
 import review  # noqa: E402
 import score  # noqa: E402
+import svgkit  # noqa: E402
 import validate  # noqa: E402
 
 AS_OF = "2026-11-26"
@@ -81,6 +83,13 @@ def acme() -> score.Portfolio:
     bets = load.csv_bets(ACME / "bets.csv")
     records = loop.collect(ACME / "landing", bets)
     return score.review(bets, load.csv_work(ACME / "work.csv"), AS_OF, records)
+
+
+def acme_sample() -> score.Portfolio:
+    """The sample's own review, as the README's Sample command computes it."""
+    sample = ROOT / "examples" / "acme"
+    bets = load.csv_bets(sample / "bets.csv")
+    return score.review(bets, load.csv_work(sample / "work.csv"), "2026-07-27", loop.collect(sample / "landing", bets))
 
 
 def by_id(pf: score.Portfolio) -> dict[str, score.Review]:
@@ -238,14 +247,14 @@ class Cost(unittest.TestCase):
 
     def test_no_cost_key_says_so_and_prints_no_figure(self):
         r = score.review_bet(bet(), [work()], AS_OF)
-        self.assertEqual(render.cost_lines(r), ["Cost: not checked. Run cost-budget-check."])
+        self.assertEqual(render.cost_text(r), "not checked yet (cost-budget-check)")
 
     def test_cost_key_is_printed_as_written(self):
         record = json.loads((ACME / "landing" / "job-summary-drafting.json").read_text(encoding="utf-8"))
         r = score.review_bet(bet(), [work()], AS_OF, record)
-        line = render.cost_lines(r)[0]
-        self.assertIn("tokens per task 8,400 tokens", line)
-        self.assertIn("price per token 0.000003 USD", line)
+        line = render.cost_text(r)
+        self.assertIn("AI usage per task 8,400 tokens", line)
+        self.assertIn("AI price per unit 0.000003 USD", line)
         self.assertNotIn("0.027", line, "no product of the two is computed")
 
 
@@ -326,9 +335,9 @@ class Output(unittest.TestCase):
 
     def test_do_these_first(self):
         md = render.to_markdown(acme(), "t", {}, False)
-        head = md.split("## Ranked review")[0]
-        self.assertIn("## Do these first", head)
-        self.assertIn("1. **Trade directory listing (ACME-B6):**", head)
+        head = md.split("## Every project, in order")[0]
+        self.assertIn("## What to do next", head)
+        self.assertIn("**Trade directory listing (ACME-B6):** Name one owner for this project. Owner: none named. When: before build starts.", head)
 
     def test_sample_command_reproduces_the_committed_sample(self):
         """The README's Sample command, run on a fresh copy of the inputs, writes the committed files byte for byte."""
@@ -544,8 +553,8 @@ class Loop(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 review.main(["--demo", "--out", str(out)])
             md = (out / "review.md").read_text(encoding="utf-8")
-            self.assertIn("spec yes, evals yes, cost no, result stalled", md)
-            self.assertIn('<span class="chip off">cost</span>', (out / "review.html").read_text(encoding="utf-8"))
+            self.assertIn("build plan checked yes, quality tested yes, cost checked no, result stalled", md)
+            self.assertIn('<span class="chip off">cost checked</span>', (out / "review.html").read_text(encoding="utf-8"))
             self.assertEqual(validate.check(md, json.loads((out / "review.json").read_text(encoding="utf-8"))), [])
 
     def test_loop_status_word_cannot_be_invented(self):
@@ -607,10 +616,95 @@ class DemoFixture(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 review.main(["--demo", "--out", d])
-            self.assertTrue((Path(d) / "review.md").read_text(encoding="utf-8").startswith("# Bet portfolio review: Demo fixture, not the Acme sample"))
+            self.assertTrue((Path(d) / "review.md").read_text(encoding="utf-8").startswith("# Portfolio review: Demo fixture, not the Acme sample"))
 
 
 class Page(unittest.TestCase):
+    """The sample page follows the Landing Loop sample anatomy and draws in its one visual family."""
+
+    def setUp(self):
+        self.page = (ROOT / "examples" / "acme" / "bet-portfolio-review.html").read_text(encoding="utf-8")
+        self.demo = render.to_html(acme(), "t", {}, True, {})
+
+    def test_the_page_follows_the_sample_anatomy(self):
+        body = self.page.split('<main class="solo">', 1)[1]
+        order = ['class="sk-hdr"', "<h1>", 'role="img"', "What to do next", 'class="projects"', "Evidence ledger", "For your engineers"]
+        at = [body.index(x) for x in order]
+        self.assertEqual(at, sorted(at))
+        self.assertIn("<h1>Five of eight projects are ready. Start with Supplier price sync: it has no landing brief.</h1>", body)
+        self.assertEqual(body.count('<div class="next">'), 1, "one next step leads the page")
+        self.assertIn('<span class="o"><i>Owner</i>Lead, Quoting squad</span><span class="d"><i>When</i>before build starts</span>', body)
+        self.assertNotIn("Book a call", body, "a sample is the skill's own output: no call to action")
+
+    def test_illustrative_tag_is_blue(self):
+        self.assertIn('<span class="sk-ill">Illustrative</span>', self.page)
+        self.assertIn(":root{--ill:#74A5DA}", self.page)
+
+    def test_the_visual_draws_only_figures_the_page_prints(self):
+        for page in (self.page, self.demo):
+            self.assertEqual(len(svgkit.visuals_in(page)), 2, "the grid, wide and tall")
+            self.assertEqual(svgkit.unprinted(page), [])
+            text = svgkit.page_text(page)
+            for svg in svgkit.visuals_in(page):
+                for line in svgkit.texts_in(svg):
+                    if line not in ("DO FIRST", "NONE", "PLAN INCOMPLETE", "PLAN COMPLETE", "WORK LINKED", "NO WORK"):  # axis words
+                        self.assertIn(line.upper(), text, f"{line!r} is drawn but not printed")
+
+    def test_each_project_is_drawn_once_per_variant(self):
+        for svg in svgkit.visuals_in(self.page):
+            drawn = " ".join(svgkit.texts_in(svg))
+            for r in acme_sample().reviews:
+                self.assertEqual(" ".join(drawn.split()).count(r.bet.name.upper()), 1, r.bet.name)
+            self.assertEqual(drawn.count("DO FIRST"), 1)
+
+    def test_green_and_red_only_beside_their_words(self):
+        for page in (self.page, self.demo):
+            body = page.split("</style>", 1)[1]
+            rest = re.sub(r'<span class="st (landed|stalled)">\1</span>', "", body)
+            for word in ("landed", "stalled"):
+                self.assertNotIn(f"var(--{word})", rest)
+                self.assertNotIn(f"st {word}", rest)
+        self.assertIn('<span class="st landed">landed</span>', self.demo)
+
+    def test_each_visual_states_its_answer(self):
+        labels = re.findall(r'role="img" aria-label="([^"]+)"', self.page)
+        self.assertEqual(len(labels), 2)
+        for label in labels:
+            self.assertEqual(
+                label,
+                "Supplier price sync is circled to do first because it has no landing brief; six of eight projects have both a complete plan and linked work.",
+            )
+
+    def test_public_copy_uses_plain_words(self):
+        for page in (self.page, self.demo):
+            public = svgkit.page_text(page.split("Evidence ledger", 1)[0]).lower()
+            for word in (
+                " bet ",
+                " bets ",
+                " bar ",
+                "the line",
+                "02 spec",
+                "spec-auditor on",
+                "landing_brief.py",
+                ".json",
+                "--fail-on",
+                "non goals",
+                "tokens per task",
+            ):
+                self.assertNotIn(word, public, word)
+            self.assertIn("landing brief</b>, a one-page plan", page)
+        md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8").lower()
+        for word in (" bet ", " bets ", "the line.", "02 spec", "## do these first"):
+            self.assertNotIn(word, md, word)
+
+    def test_svgkit_matches_its_landing_loop_pin(self):
+        pin = json.loads((SKILL / "VENDORED.json").read_text(encoding="utf-8"))["landing-loop"]
+        self.assertEqual(pin["commit"], "5d01756d08ab3eb92b457c3286729791df6bcf5f")
+        self.assertEqual(set(pin["files"]), {"scripts/vendor/svgkit.py"})
+        for rel, info in pin["files"].items():
+            digest = hashlib.sha256((SKILL / rel).read_bytes()).hexdigest()
+            self.assertEqual(digest, info["sha256"], f"{rel} changed. Copy it again from landing-loop at the pinned commit and update VENDORED.json.")
+
     def test_selection_and_focus_ring_are_ink_not_green(self):
         page = (ROOT / "examples" / "acme" / "bet-portfolio-review.html").read_text(encoding="utf-8")
         # The vendored stylesheet paints both green; ours comes later in the page, so it wins.

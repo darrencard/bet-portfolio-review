@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
-"""Write the review as Markdown, as one self-contained HTML file, and as JSON for the claim check.
+"""Write the review as Markdown, as one self-contained HTML page, and as JSON for the claim check.
 
 The HTML uses the Leader Report's own stylesheet and fonts, read from its vendored template
-(assets/leader-report-template.html), and follows its style guide (references/design.md in that skill): mono capital
-labels, hairline rows, colour for status only, brass where a person owes something. Markdown is the plain-text twin.
+(assets/leader-report-template.html), and draws its picture with svgkit (scripts/vendor/svgkit.py, vendored
+byte-identical from landing-loop), so it sits in the Landing Loop's one visual family. Markdown is the plain-text twin.
+
+The page reads top down for someone who has never seen the loop: the shared header, the verdict as the heading,
+the signature picture (each project placed by whether its plan is complete and whether work is linked to it, the
+one to do first circled), then one thing to do next with its owner in brass. Every project follows in two columns,
+then the work linked to no project. The evidence ledger and everything for engineers (gap codes, the parser's own
+words, file names, flags, the record key) sit in folds. Public copy uses plain words: project, target, landing brief
+(defined at first use), build plan.
+
+Colour means one thing each: brass for the person who owns the next step, green and red only inside the printed
+words landed and stalled. The picture draws only names the page prints, and its aria-label states the answer.
 
 Every number printed here comes from score.py. Every piece of text read from a source is escaped: in Markdown,
 pipes, angle brackets and line breaks are neutralised; in HTML, everything goes through html.escape.
@@ -17,17 +27,91 @@ import decimal
 import html
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
-from loop import progress, progress_text
+from loop import TOOL, progress
 from score import LABELS, TOTAL, Portfolio, Review, orphan_move
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
+
+import svgkit as sk  # noqa: E402  (vendored, unchanged; see VENDORED.json)
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "leader-report-template.html"
 Progress = dict[str, Any]
 
 NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
 ILLUSTRATIVE = "Illustrative: every figure in this review comes from an invented company's sample data."
+NUMBER_WORDS = ("No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve")
+
+# Gaps that stop a project being judged. A project with none of them is ready.
+BLOCKING = ("no-owner", "no-brief", "brief-problems", "no-work", "date-passed")
+# Why a project needs work, in the heading's words.
+WHY = {
+    "no-owner": "it has no owner",
+    "no-brief": "it has no landing brief",
+    "brief-problems": "its landing brief is incomplete",
+    "no-work": "no work is linked to it",
+    "date-passed": "its date has passed",
+}
+# The loop steps a project file can hold, in plain words. The record's keys stay spec, evals, cost and landed.
+STEPS = (("spec", "build plan checked"), ("evals", "quality tested"), ("cost", "cost checked"))
+
+# Stored text (the next step, the brief parser's words, the evidence names) in the page's words. The record and
+# the JSON keep the original text.
+WORDS = (
+    (
+        r"Write the landing brief: problem, definition of good, non-goals, cost budget, the line\.",
+        "Write the landing brief: the problem, what good looks like, what is out of scope, the cost budget, and who does what (a person or the software).",
+    ),
+    (
+        r"Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts\.",
+        "Next: check the build plan against this landing brief before build starts.",
+    ),
+    (r"Run did-it-land on (.+?)(,| once)", r"Read \1 against its target\2"),
+    (r"\bFix the brief\b", "Fix the landing brief"),
+    (r"\bnon goals\b", "what is out of scope"),
+    (r"\btokens per task\b", "AI usage per task"),
+    (r"\bprice per token\b", "AI price per unit"),
+    (r"^Bets (landed|watch|stalled)$", r"Projects marked \1"),
+    (r"\bthe bet's\b", "the project's"),
+    (r"\bthis bet\b", "this project"),
+    (r"\bthe bet\b", "the project"),
+    (r"\bbets\b", "projects"),
+    (r"\bBets\b", "Projects"),
+    (r"\bbet\b", "project"),
+    (r"\bthe bar\b", "the target"),
+    (r"\bBar\b", "Target"),
+    (r"\bbar\b", "target"),
+    (r"brief parses \(landing_brief\.py\)", "landing brief is complete"),
+    (r"brief parses", "landing brief is complete"),
+)
+
+
+def plain(text: str) -> str:
+    """Stored text in the page's words: project, target, build plan."""
+    for pattern, to in WORDS:
+        text = re.sub(pattern, to, text)
+    return text
+
+
+def split_who(step: str, r: Review) -> tuple[str, str, str]:
+    """The next step without its role label, the label (Owner or Decides) and the person it names."""
+    m = re.search(r"(Owner|Decider): ([^.]+)\.\s*", step)
+    if not m:
+        return step, "Owner", r.bet.owner or "none named"
+    rest = (step[: m.start()] + step[m.end() :]).strip()
+    return rest, "Owner" if m.group(1) == "Owner" else "Decides", m.group(2)
+
+
+def when(r: Review) -> str:
+    """When the next step is due: now for a passed date, before build for a gap that blocks it, else the brief's date."""
+    if "date-passed" in r.gaps:
+        return "now"
+    if set(r.gaps) & set(BLOCKING) or r.brief is None:
+        return "before build starts"
+    return f"by {r.brief.by}"
 
 
 def md(text: str, limit: int = 300) -> str:
@@ -36,10 +120,49 @@ def md(text: str, limit: int = 300) -> str:
     return text.replace("\\", "\\\\").replace("|", "\\|").replace("<", "&lt;").replace(">", "&gt;").replace("`", "'")
 
 
+def count_word(n: int) -> str:
+    return NUMBER_WORDS[n] if n < len(NUMBER_WORDS) else str(n)
+
+
+def plural(n: int, noun: str) -> str:
+    return f"{n} {noun}{'' if n == 1 else 's'}"
+
+
+def and_join(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def ready(r: Review) -> bool:
+    return not set(r.gaps) & set(BLOCKING)
+
+
+def first_why(r: Review) -> str | None:
+    return next((WHY[g] for g in r.gaps if g in WHY), None)
+
+
+def verdict(pf: Portfolio) -> str:
+    """The heading: how many projects are ready, any that stalled, and which to start with and why."""
+    n = len(pf.reviews)
+    if not n:
+        return "No projects to review."
+    k = sum(1 for r in pf.reviews if ready(r))
+    if k == n:
+        parts = [f"All {count_word(n).lower()} projects are ready."]
+    else:
+        parts = [f"{count_word(k)} of {count_word(n).lower()} projects {'is' if k == 1 else 'are'} ready."]
+    stalled = [r.bet.name for r in pf.reviews if r.status == "stalled"]
+    if stalled:
+        parts.append(f"{and_join(stalled)} stalled.")
+    why = first_why(pf.reviews[0])
+    if why:
+        parts.append(f"Start with {pf.reviews[0].bet.name}: {why}.")
+    return " ".join(parts)
+
+
 def linked_line(pf: Portfolio) -> str:
     if not pf.work_total:
         return "No work items were given."
-    return f"{pf.linked_percent}% of {pf.work_total} work items link to a bet; {pf.judged_percent}% sit under a bet whose brief parses."
+    return f"{pf.linked_percent}% of {pf.work_total} work items link to a project; {pf.judged_percent}% sit under a project whose landing brief is complete."
 
 
 def status_text(r: Review) -> str:
@@ -63,102 +186,107 @@ def figure_text(f: Any) -> str:
     return f"{value} {f.get('unit', '')}".strip()
 
 
-def cost_lines(r: Review) -> list[str]:
-    """Cost per task is cost-budget-check's figure. Shown from its `cost` key, never computed here."""
+def cost_text(r: Review) -> str:
+    """Cost is cost-budget-check's figure. Shown from its `cost` key, never computed here."""
     cost = (r.record or {}).get("cost")
     if not isinstance(cost, dict) or not cost:
-        return ["Cost: not checked. Run cost-budget-check."]
+        return "not checked yet (cost-budget-check)"
     tokens, price = cost.get("tokens_per_task"), cost.get("price_per_token")
-    src = md(str(tokens.get("source", ""))) if isinstance(tokens, dict) else ""
-    tail = f" (source: {src})." if src else "."
-    return [f"Cost, from cost-budget-check: tokens per task {md(figure_text(tokens))}; price per token {md(figure_text(price))}{tail}"]
+    src = str(tokens.get("source", "")) if isinstance(tokens, dict) else ""
+    tail = f" (source: {src})" if src else ""
+    return f"AI usage per task {figure_text(tokens)}; AI price per unit {figure_text(price)}, from cost-budget-check{tail}"
 
 
-def definition(r: Review) -> str:
+def target(r: Review) -> str:
+    """The definition of good in plain words: the metric, the target, which way, by when."""
     b = r.brief
-    assert b is not None  # noqa: S101
-    return f"{md(b.metric)}, bar {md(b.bar_text)}, {'higher' if b.higher_is_better else 'lower'} is better, by {md(b.by)}"
+    if b is None:
+        return "No landing brief yet" if "no-brief" in r.gaps else "Landing brief incomplete"
+    return f"{b.metric}: {b.bar_text} or {'higher' if b.higher_is_better else 'lower'} by {b.by}"
+
+
+def steps_text(p: Progress | None) -> str:
+    """Which loop steps the project's file holds, in plain words. No record yet reads the same as an empty one."""
+    p = p or progress({})
+    parts = [f"{word} {'yes' if p[k] else 'no'}" for k, word in STEPS]
+    parts.append(f"result {p['landed_status']}" if p["landed_status"] else f"result {'yes' if p['landed'] else 'no'}")
+    return ", ".join(parts)
 
 
 def loop_cell(r: Review, loop: dict[str, Progress | None] | None) -> str:
-    return progress_text(loop.get(r.bet.id)) if loop is not None else "not read"
+    return steps_text(loop.get(r.bet.id)) if loop is not None else "not read"
 
 
 def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     n = len(pf.reviews)
-    out = [f"# Bet portfolio review: {md(title)}", ""]
+    out = [f"# Portfolio review: {md(title)}", ""]
     if illustrative:
         out += [f"> **{ILLUSTRATIVE}**", ""]
     out += [
-        f"As of {pf.as_of}. {n} bets; {pf.complete} have a brief that parses. {linked_line(pf)}",
+        f"**{md(verdict(pf))}**",
         "",
-        "Status words (landed, watch, stalled) are did-it-land's, read from each bet's loop record. A metric moving is not proof that the bet moved it.",
+        f"As of {pf.as_of}. A project is a piece of work you expect to move a number. Each one is checked against its landing brief, "
+        "a one-page plan: what good looks like, by when, at what cost. Ready means one owner, a complete landing brief and work linked to it.",
         "",
-        "## Do these first",
+        f"{n} projects; {pf.complete} have a complete landing brief. {linked_line(pf)}",
         "",
-        *[f"{r.rank}. **{md(r.bet.name)} ({md(r.bet.id)}):** {md(r.next_step)}" for r in pf.reviews[:3]],
+        "Status words (landed, watch, stalled) come from did-it-land, read from each project's file. A number moving is not proof that the project moved it.",
         "",
-        "## Scorecard",
+    ]
+    if pf.reviews:
+        r = pf.reviews[0]
+        step, role, who = split_who(plain(r.next_step), r)
+        out += ["## What to do next", "", f"**{md(r.bet.name)} ({md(r.bet.id)}):** {md(step)} {role}: {md(who)}. When: {when(r)}.", ""]
+    out += ["## Where each project stands", "", "| Project | Complete landing brief | Work linked | Owner |", "|---|---|---|---|"]
+    out += [
+        f"| {md(r.bet.name)} ({md(r.bet.id)}) | {'yes' if r.passed['brief'] else 'no'} | {'yes' if r.passed['linked_work'] else 'no'} | {md(r.bet.owner) or 'none'} |"
+        for r in pf.reviews
+    ]
+    out += [
         "",
-        "Each bet's definition of good, read from its brief. The result is did-it-land's; this review prints it and never computes one.",
+        "## Every project, in order",
         "",
-        "| Rank | Bet | Metric | Bar | Better | By | Result |",
-        "|---|---|---|---|---|---|---|",
-        *[scorecard_md(r) for r in pf.reviews],
+        "Rank 1 needs work first. Steps done shows which Landing Loop steps the project's file holds.",
         "",
-        "## Ranked review",
-        "",
-        "Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop shows which Landing Loop steps the bet's record holds.",
-        "",
-        "| Rank | Bet | Owner | Readiness | Gaps | Result | Loop | Next step |",
+        "| Rank | Project | Owner | Readiness | Missing | Result | Steps done | Next step |",
         "|---|---|---|---|---|---|---|---|",
     ]
     for r in pf.reviews:
         out.append(
             f"| {r.rank} | {md(r.bet.name)} ({md(r.bet.id)}) | {md(r.bet.owner) or 'none'} | {r.points} of {TOTAL} ({r.percent}%) "
-            f"| {gap_list(r)} | {status_text(r)} | {loop_cell(r, loop)} | {md(r.next_step)} |"
+            f"| {gap_list(r)} | {status_text(r)} | {loop_cell(r, loop)} | {md(plain(r.next_step))} |"
         )
-    out += ["", "## Each bet", ""]
+    out += ["", "## Each project", ""]
     for r in pf.reviews:
         out += [f"### {r.rank}. {md(r.bet.name)} ({md(r.bet.id)})", ""]
-        out.append(f"- Source: {md(r.bet.source)}.")
+        out.append(f"- Target: {md(target(r))}.")
         decides = md(r.brief.decides) if r.brief else "none named"
         out.append(f"- Owner: {md(r.bet.owner) or 'none'}. Decides the next step: {decides}.")
-        out.append(f"- Readiness: {r.points} of {TOTAL} points ({r.percent}%).")
-        out.append(f"- Gaps: {gap_list(r)}.")
-        out += [f"  - landing_brief.py: {md(x)}" for x in r.problems if "no-brief" not in r.gaps]
-        if r.brief is not None:
-            out.append(f"- Definition of good: {definition(r)}.")
-        out += [f"- {line}" for line in cost_lines(r)]
+        out.append(f"- Missing: {gap_list(r)}.")
+        out += [f"  - The landing brief check says: {md(plain(x))}" for x in r.problems if "no-brief" not in r.gaps]
+        out.append(f"- Work linked: {plural(len(r.work), 'item')}.")
+        out.append(f"- Cost: {md(cost_text(r))}.")
         out.append(f"- Result: {status_text(r)}.")
-        out.append(f"- Loop: {loop_cell(r, loop)}.")
-        out.append(f"- Linked work: {len(r.work)} item{'' if len(r.work) == 1 else 's'}.")
-        out.append(f"- **Next step:** {md(r.next_step)}")
+        out.append(f"- Steps done: {loop_cell(r, loop)}.")
+        out.append(f"- Readiness: {r.points} of {TOTAL} points ({r.percent}%). Source: {md(r.bet.source)}.")
+        out.append(f"- **Next step:** {md(plain(r.next_step))}")
         out.append("")
-    out += ["## Work linked to no bet", "", orphan_move(pf.orphans), ""]
+    out += ["## Work linked to no project", "", plain(orphan_move(pf.orphans)), ""]
     if pf.orphans:
         out += ["| Item | Title | Why | Source |", "|---|---|---|---|"]
-        out += [f"| {md(o.work.id)} | {md(o.work.title)} | {md(o.why)} | {md(o.work.source)} |" for o in pf.orphans]
+        out += [f"| {md(o.work.id)} | {md(o.work.title)} | {md(plain(o.why))} | {md(o.work.source)} |" for o in pf.orphans]
         out.append("")
-    out += ["## Gaps across the portfolio", "", "| Gap | Bets |", "|---|---|"]
+    out += ["## What is missing, across projects", "", "| Missing | Projects |", "|---|---|"]
     out += [f"| {LABELS[g]} | {c} |" for g, c in pf.gap_counts.items() if c]
     out += ["", "## Evidence", "", "| Figure | Value | Computed from |", "|---|---|---|"]
     for name, value, src in figures_table(pf, sources):
-        out.append(f"| {name} | {value} | {md(src)} |")
-    out += ["", "Computed by scripts/review.py. The readiness weights are in scripts/score.py; brief problems come from landing_brief.py.", ""]
+        out.append(f"| {plain(name)} | {value} | {md(src)} |")
+    out += ["", "Computed by scripts/review.py. The readiness weights are in scripts/score.py; the landing brief check is landing_brief.py.", ""]
     return "\n".join(out)
 
 
-def scorecard_md(r: Review) -> str:
-    b = r.brief
-    head = f"| {r.rank} | {md(r.bet.name)} ({md(r.bet.id)}) "
-    if b is None:
-        return head + f"| no landing brief that parses | none | none | none | {status_text(r)} |"
-    return head + f"| {md(b.metric)} | {md(b.bar_text)} | {'higher' if b.higher_is_better else 'lower'} | {md(b.by)} | {status_text(r)} |"
-
-
 def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
-    """Each portfolio figure, its value, and the files it was computed from."""
+    """Each portfolio figure, its value, and the files it was computed from. The names are the JSON's keys."""
     s = sources or {}
     bets, work, records = s.get("bets", ""), s.get("work", ""), s.get("records", "")
     both = ", ".join(x for x in (bets, work) if x)
@@ -176,38 +304,52 @@ def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[
     return rows
 
 
-# Layout for a review page, on top of the Leader Report stylesheet: no rail, sections instead of slides. The template's
-# green selection and focus ring are set to ink: green is did-it-land's landed only.
+# Layout for this page only, on top of the Leader Report stylesheet and svgkit.CSS, as did-it-land's page does.
+# The template's green selection and focus ring are set to ink: green is did-it-land's landed only.
 PAGE_CSS = """
-main{margin-left:0}
+main.solo{margin-left:0}
+.solo .slide{min-height:0}
+.solo .slide.cover{min-height:0;padding-top:40px;padding-bottom:48px;justify-content:flex-start}
+.solo h1{font-size:clamp(34px,4.6vw,60px);line-height:1;letter-spacing:-.04em;max-width:22ch;margin-bottom:20px}
+.solo .lede{margin-bottom:28px}
+.solo .lede b{color:var(--t1);font-weight:500}
+.cols{display:grid;grid-template-columns:minmax(0,640px) minmax(260px,1fr);gap:28px 48px;align-items:start}
+.side{display:grid;gap:24px}
+.next{display:grid;gap:10px;border:1px solid var(--brass);border-radius:12px;padding:20px 22px;background:var(--brass-bg)}
+.next>b{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.next p{margin:0;font-size:16px;line-height:1.5;color:var(--t1)}
+.next p span{color:var(--t2)}
+.who{display:flex;flex-wrap:wrap;gap:4px 24px;font:400 11.5px/18px var(--mono);color:var(--brass)}
+.who i{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
+.who .d{color:var(--t2)}
+.figs{margin:0;display:grid}
+.figs>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 16px;border-top:1px solid var(--line);padding:10px 0}
+.figs dt{font:400 10px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.figs dd{margin:0;font-size:13.5px;line-height:1.55;color:var(--t2)}
+.figs dd b{color:var(--t1);font-weight:500}
+.figs .own dt{color:var(--brass)}
+.figs .own .o{display:block;margin-top:4px;font:400 11.5px/18px var(--mono);color:var(--brass)}
+.projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--s1)}
+.project{padding:20px 24px 14px;box-shadow:-1px 0 0 var(--line),0 -1px 0 var(--line)}
+.project h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;font:600 18px/1.25 var(--display);letter-spacing:-.02em;color:var(--t1)}
+.project h3 .rk{font:400 10px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
+.project .figs>div:first-child{border-top:0}
+.nos{white-space:nowrap;font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip.off{color:var(--t3);border-style:dashed}
+.solo details{margin-top:20px}
+.solo details .tablewrap{margin-top:12px}
+.note{max-width:80ch;font-size:12.5px;line-height:1.6;color:var(--t2);margin:12px 0 0}
+.eng td{font-size:12px;vertical-align:top}
+.eng .chip{margin:0 4px 4px 0}
+td.src{white-space:normal;min-width:96px}
 ::selection{background:var(--t1);color:var(--bg)}
 :focus-visible{outline-color:var(--t1)}
-.slide{min-height:0;padding:48px 40px 36px}
-.slide.first{padding-top:56px}
-.slide h1{font-size:clamp(36px,4.6vw,60px)}
-.brand{margin-bottom:28px}
-.own .li-t{min-width:22px;display:inline-block}
-td .sh{width:56px}
-.loop{display:grid;grid-template-columns:repeat(2,max-content);gap:4px}
-td.bn{min-width:150px}
-td.gp{min-width:140px}
-td.ns{min-width:280px}
-td.src{white-space:normal;min-width:96px}
-.chip.off{color:var(--t3);border-style:dashed}
-.nos{white-space:nowrap;font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
-.gp{font-size:12px;color:var(--t2)}
-.betcard h3{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
-.betcard .nm{font:600 18px/1.25 var(--display);color:var(--t1);margin:0 0 12px;letter-spacing:-.02em}
-.betcard .nx{margin-top:12px;color:var(--t1);font-size:13.5px}
-.betcard .nx b{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
-@media (max-width:980px){.slide{padding:32px 16px 28px}}
+.foot{max-width:1120px;margin:0 auto;padding:28px 40px 64px;color:var(--t3);font-size:12px}
+@media (max-width:1100px){.cols{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:980px){.foot{padding:24px 16px 48px}.solo .slide.cover{padding-top:24px}.projects{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:560px){.figs>div{grid-template-columns:1fr;gap:0}.project{padding:16px 16px 12px}}
 """
-BRAND = (
-    '<div class="brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">'
-    '<rect x="2" y="13" width="3" height="7" fill="var(--agent)"/><rect x="7" y="10" width="3" height="10" fill="var(--agent)"/>'
-    '<rect x="12" y="2" width="1.5" height="20" fill="var(--brass)"/><rect x="16" y="4" width="4" height="16" fill="var(--t1)"/></svg>'
-    '<span translate="no">DACARD</span></div>'
-)
 
 
 def stylesheet() -> str:
@@ -228,139 +370,218 @@ def status_html(r: Review) -> str:
     return f'<span class="st {h(r.status)}">{h(r.status)}</span>'
 
 
-def share_bar(percent: int) -> str:
-    return f'<span class="sh" aria-hidden="true"><i style="width:{max(0, min(100, percent))}%"></i></span>'
-
-
-def loop_html(r: Review, loop: dict[str, Progress | None] | None) -> str:
+def steps_html(r: Review, loop: dict[str, Progress | None] | None) -> str:
     if loop is None:
         return '<span class="nos">not read</span>'
     p = loop.get(r.bet.id) or progress({})  # no record yet reads the same as an empty one, so a rerun prints the same page
-    chips = [f'<span class="chip{"" if p[k] else " off"}">{k}</span>' for k in ("spec", "evals", "cost")]
+    chips = [f'<span class="chip{"" if p[k] else " off"}">{word}</span>' for k, word in STEPS]
     if p["landed_status"]:
         chips.append(f'<span class="st {h(p["landed_status"])}">{h(p["landed_status"])}</span>')
     else:
         chips.append(f'<span class="chip{"" if p["landed"] else " off"}">result</span>')
-    return f'<span class="loop">{"".join(chips)}</span>'
+    return f'<span class="chips">{"".join(chips)}</span>'
 
 
-def scorecard_html(pf: Portfolio) -> str:
-    """The Leader Report's scorecard rows: bet and metric, the definition of good in mono, the status word. No actual:
-    the reading is did-it-land's."""
-    out = []
-    for r in pf.reviews:
-        b = r.brief
-        owner = f'Owner <span style="color:var(--brass)">{h(r.bet.owner)}</span>' if r.bet.owner else "No owner"
-        decides = f" · Decides {h(b.decides)}" if b else ""
-        sub = f'<span class="sc-d">{h(b.metric)}</span>' if b else '<span class="sc-d">No landing brief that parses</span>'
-        if b:
-            line = f"<em>Bar</em> {h(b.bar_text)} · {'higher' if b.higher_is_better else 'lower'} is better · <em>By</em> {h(b.by)}"
+# The signature picture: plan complete? across, work linked? down, one dot per project, the first circled.
+
+
+def _wrap(text: str, chars: int) -> list[str]:
+    lines: list[str] = []
+    for word in text.split():
+        if lines and len(lines[-1]) + 1 + len(word) <= chars:
+            lines[-1] += " " + word
         else:
-            line = "<em>Bar</em> none · <em>By</em> none"
-        out.append(
-            f'<div class="sc-r"><div class="sc-n"><span>{r.rank}. {h(r.bet.name)}</span>{sub}<span class="sc-x">{owner}{decides}</span></div>'
-            f'<div class="sc-v"><span class="sc-l">{line}</span></div><div class="sc-s">{status_html(r)}</div></div>'
-        )
-    head = '<div class="sc-h"><span>Bet</span><span>Definition of good</span><span>Result</span></div>'
-    return f'<div class="sc">{head}{"".join(out)}</div>'
+            lines.append(word)
+    return lines or [""]
 
 
-def table(heads: list[str], rows: str, num: tuple[int, ...] = ()) -> str:
+def _ring(x: float, y: float, r: float) -> str:
+    return f'<circle cx="{sk.num(x)}" cy="{sk.num(y)}" r="{sk.num(r)}" fill="none" stroke="{sk.INK}" stroke-width="{sk.num(sk.STROKE)}"/>'
+
+
+def _upright(x: float, y: float, text: str) -> str:
+    """A row label turned to read upwards, centred on (x, y)."""
+    return f'<g transform="translate({sk.num(x)} {sk.num(y)}) rotate(-90)">{sk.label(0, 0, text, anchor="middle")}</g>'
+
+
+def _cells(pf: Portfolio) -> dict[tuple[bool, bool], list[Review]]:
+    """Projects by (plan complete, work linked), each list in rank order."""
+    cells: dict[tuple[bool, bool], list[Review]] = {(p, w): [] for w in (True, False) for p in (False, True)}
+    for r in pf.reviews:
+        cells[(r.passed["brief"], r.passed["linked_work"])].append(r)
+    return cells
+
+
+def grid(pf: Portfolio, variant: str) -> str:
+    """The signature picture. 640 wide beside the next step on desktop, 340 wide on phones, where names wrap."""
+    wide = variant == "wide"
+    width = 640.0 if wide else float(sk.TALL)
+    gut, top = 24.0, 30.0
+    col = (width - gut) / 2
+    chars = 99 if wide else int((col - 40) / sk.label_width("x"))
+    first = pf.reviews[0]
+    cells = _cells(pf)
+
+    def item_height(r: Review) -> float:
+        lines = len(_wrap(r.bet.name.upper(), chars))
+        return lines * 15 + (24 if r is first and not wide else 0) + 11
+
+    def cell_height(rs: list[Review]) -> float:
+        return 30 + (sum(item_height(r) for r in rs) if rs else 20)
+
+    rows = {w: max(64.0, cell_height(cells[(False, w)]), cell_height(cells[(True, w)])) for w in (True, False)}
+    height = top + rows[True] + rows[False] + 2
+    y0 = {True: top, False: top + rows[True]}
+    bottom = height - 1
+    parts = [sk.zone(gut + col, top, col, rows[True])]  # plan and work both in place: shaded neutral, never green
+    parts += [sk.rule(gut, y, width, y) for y in (top, top + rows[True], bottom)]
+    parts += [sk.rule(x, top, x, bottom) for x in (gut, gut + col, width)]
+    parts.append(sk.label(gut + 14, 18, "Plan incomplete"))
+    parts.append(sk.label(gut + col + 14, 18, "Plan complete", tone=sk.INK2))
+    parts.append(_upright(10, top + rows[True] / 2, "Work linked"))
+    parts.append(_upright(10, top + rows[True] + rows[False] / 2, "No work"))
+    for (p, w), rs in cells.items():
+        x = gut + (col if p else 0) + 14
+        y = y0[w] + 28
+        if not rs:
+            parts.append(sk.label(x, y, "None", tone=sk.LINE3))
+            continue
+        for r in rs:
+            lines = _wrap(r.bet.name.upper(), chars)
+            cy = y - 4
+            parts.append(sk.point(x + 5, cy, r=5) if r.bet.owner else sk.hollow(x + 5, cy, r=4.5))
+            parts += [sk.label(x + 22, y + i * 15, line, tone=sk.INK) for i, line in enumerate(lines)]
+            if r is first:
+                parts.append(_ring(x + 5, cy, 10))
+                last = y + (len(lines) - 1) * 15
+                if wide:
+                    parts.append(sk.chip(x + 34 + sk.label_width(lines[-1]), last - 13, "Do first", tone=sk.INK))
+                else:
+                    parts.append(sk.chip(x + 22, last + 6, "Do first", tone=sk.INK))
+            y += item_height(r)
+    return sk.frame("".join(parts), label=grid_label(pf, cells), height=height, width=width, variant=variant)
+
+
+def grid_label(pf: Portfolio, cells: dict[tuple[bool, bool], list[Review]]) -> str:
+    """The picture's answer in one sentence."""
+    first = pf.reviews[0]
+    why = first_why(first)
+    lead = f"{first.bet.name} is circled to do first" + (f" because {why}" if why else "")
+    both = len(cells[(True, True)])
+    return f"{lead}; {count_word(both).lower()} of {count_word(len(pf.reviews)).lower()} projects have both a complete plan and linked work."
+
+
+GRID_CAPTION = (
+    "Each dot is one project, placed by whether its landing brief is complete and whether any work is linked to it. "
+    "The shaded corner has both. A hollow dot has no owner. The ring marks the project to do first."
+)
+
+
+def next_box(r: Review) -> str:
+    step, role, who = split_who(plain(r.next_step), r)
+    return (
+        f'<div class="next"><b>What to do next</b><p>{h(r.bet.name)}. <span>{h(step)}</span></p>'
+        f'<span class="who"><span class="o"><i>{h(role)}</i>{h(who)}</span><span class="d"><i>When</i>{h(when(r))}</span></span></div>'
+    )
+
+
+def glance(pf: Portfolio) -> str:
+    n = len(pf.reviews)
+    rows = [("Projects", f"<b>{n}</b> on the roadmap"), ("Complete plan", f"<b>{pf.complete}</b> of {n} have a complete landing brief")]
+    if pf.linked_percent is not None:
+        rows.append(("Work linked", f"<b>{pf.linked_percent}%</b> of {pf.work_total} work items link to a project"))
+        rows.append(("Can be judged", f"<b>{pf.judged_percent}%</b> of work sits under a complete landing brief"))
+    rows.append(("Unlinked work", f"<b>{len(pf.orphans)}</b> {'item links' if len(pf.orphans) == 1 else 'items link'} to no project"))
+    return '<dl class="figs">' + "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in rows) + "</dl>"
+
+
+def project_card(r: Review, loop: dict[str, Progress | None] | None) -> str:
+    step, role, who = split_who(plain(r.next_step), r)
+    decides = h(r.brief.decides) if r.brief else "none named"
+    rows = [
+        ("Target", h(target(r))),
+        ("Owner", f"{h(r.bet.owner) or 'none named'}. Decides: {decides}"),
+        ("Missing", h("; ".join(LABELS[g] for g in r.gaps if g != "no-result") or "Nothing")),
+        ("Work linked", h(plural(len(r.work), "item"))),
+        ("Cost", h(cost_text(r)[0].upper() + cost_text(r)[1:])),
+        ("Steps done", steps_html(r, loop)),
+    ]
+    body = "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in rows)
+    own = f'<div class="own"><dt>Next step</dt><dd>{h(step)}<span class="o">{h(role)}: {h(who)}, {h(when(r))}</span></dd></div>'
+    return f'<article class="project"><h3><span><span class="rk">{r.rank:02d}</span>{h(r.bet.name)}</span>{status_html(r)}</h3><dl class="figs">{body}{own}</dl></article>'
+
+
+def table(heads: list[str], rows: str, num: tuple[int, ...] = (), cls: str = "") -> str:
     th = "".join(f"<th{' class=num' if i in num else ''}>{h(x)}</th>" for i, x in enumerate(heads))
-    return f'<div class="tablewrap"><table><thead><tr>{th}</tr></thead><tbody>{rows}</tbody></table></div>'
+    return f'<div class="tablewrap{" " + cls if cls else ""}"><table><thead><tr>{th}</tr></thead><tbody>{rows}</tbody></table></div>'
 
 
-def section(label: str, title: str, body: str, first: bool = False) -> str:
-    return f'<section class="slide{" first" if first else ""}"><div class="meta"><span>{h(label)}</span></div><h2>{h(title)}</h2>{body}</section>'
+def section(label: str, title: str, body: str) -> str:
+    return f'<section class="slide"><div class="meta"><span>{h(label)}</span></div><h2>{h(title)}</h2>{body}</section>'
+
+
+def engineers(pf: Portfolio) -> str:
+    """Gap codes, the parser's own words, files, flags and the record key: none of it is needed to act on the review."""
+    rows = []
+    for r in pf.reviews:
+        codes = "".join(f'<span class="chip">{h(g)}</span>' for g in r.gaps) or "none"
+        said = "<br>".join(h(x) for x in r.problems) or "none"
+        rows.append(
+            f'<tr><td class="num">{r.rank}</td><td class="mo">{h(r.bet.id)}</td><td>{h(r.bet.name)}</td><td class="num">{r.points} of {TOTAL}</td>'
+            f'<td>{codes}</td><td>{said}</td><td class="mo src">{h(r.bet.source)}</td></tr>'
+        )
+    note = (
+        '<p class="note">With <code>--landing</code>, the review adds its page to each project file: the <code>portfolio</code> key of '
+        "<code>landing/&lt;slug&gt;.json</code>, and no other key. <code>--fail-on no-owner,no-brief</code> exits 2 for CI when any project has "
+        f"one of those gaps. Readiness is scored in scripts/score.py: owner 3, landing brief 10, linked work 1, out of {TOTAL}. Whether a brief is "
+        "complete is landing_brief.py's call, shown above in its own words. Status words are read from <code>landed.status</code>, never computed.</p>"
+    )
+    head = ["Rank", "Id", "Project", "Readiness", "Gap codes", "landing_brief.py says", "Source"]
+    return f"<details><summary>For your engineers</summary>{table(head, ''.join(rows), num=(0, 3), cls='eng')}{note}</details>"
 
 
 def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
-    n = len(pf.reviews)
-    ill = '<span class="ill">Illustrative</span>' if illustrative else ""
-    facts = [("Bets", str(n)), ("Brief parses", str(pf.complete)), ("Work linked to no bet", str(len(pf.orphans)))]
-    if pf.linked_percent is not None:
-        facts += [("Work linked to a bet", f"{pf.linked_percent}%"), ("Work under a definition of good", f"{pf.judged_percent}%")]
+    version = "v" + TOOL.rsplit(" ", 1)[-1]
+    header = sk.page_header("bet-portfolio-review", date=f"Review {pf.as_of}", version=version, illustrative=illustrative)
+    lede = (
+        "A project is a piece of work you expect to move a number. Each one is checked against its <b>landing brief</b>, a one-page plan: "
+        "what good looks like, by when, at what cost. Ready means one owner, a complete landing brief and work linked to it."
+    )
+    pic = sk.figure(grid(pf, "wide"), grid(pf, "tall"), caption=GRID_CAPTION, illustrative=illustrative) if pf.reviews else ""
+    side = (next_box(pf.reviews[0]) if pf.reviews else "") + glance(pf)
     cover = (
-        f'<section class="slide first">{BRAND}<div class="meta"><span>Bet portfolio review</span><span>As of {h(pf.as_of)}</span>{ill}</div>'
-        f"<h1>{h(title)}</h1>"
-        f"<p class=\"lede\">{h(linked_line(pf))} Status words are did-it-land's, read from each bet's loop record. "
-        "A metric moving is not proof that the bet moved it.</p>"
-        f'<div class="facts">{"".join(f"<span><b>{h(v)}</b>{h(k)}</span>" for k, v in facts)}</div>'
-        + (f'<p class="sub">{h(ILLUSTRATIVE)}</p>' if illustrative else "")
-        + "</section>"
+        f'<section class="slide cover">{header}<h1>{h(verdict(pf))}</h1><p class="lede">{lede}</p>'
+        f'<div class="cols"><div>{pic}</div><div class="side">{side}</div></div></section>'
     )
-    firsts = "".join(
-        f'<li class="own"><span><span class="li-t">{r.rank}</span><b>{h(r.bet.name)}</b> <span class="t3">({h(r.bet.id)})</span>. {h(r.next_step)}</span>'
-        f'<span class="li-o">{h(r.bet.owner or "none")}</span><span class="nw">{status_html(r)}</span></li>'
-        for r in pf.reviews[:3]
+    every = section(
+        "Projects",
+        "Every project, in order",
+        '<p class="lede">The first needs work first. Status words come from did-it-land; this review prints them and never computes one.</p>'
+        f'<div class="projects">{"".join(project_card(r, loop) for r in pf.reviews)}</div>',
     )
-    do_first = section("01", "Do these first", f'<div class="card"><ul>{firsts}</ul></div>')
-    scorecard = section(
-        "02",
-        "Scorecard",
-        "<p class=\"lede\">Each bet's definition of good, read from its brief. The result is did-it-land's; this review prints it and never computes one.</p>"
-        f'<div class="card">{scorecard_html(pf)}</div>',
-    )
-    rows = "".join(
-        f'<tr><td class="num">{r.rank}</td><td class="bn">{h(r.bet.name)} <span class="t3">({h(r.bet.id)})</span></td>'
-        f'<td><span class="mo" style="color:var(--brass)">{h(r.bet.owner) or "none"}</span></td>'
-        f'<td class="nw">{share_bar(r.percent)}<span class="mo">{r.points} of {TOTAL}</span></td>'
-        f'<td class="gp">{h(gap_list(r))}</td><td>{loop_html(r, loop)}</td><td class="ns">{h(r.next_step)}</td></tr>'
-        for r in pf.reviews
-    )
-    ranked = section(
-        "03",
-        "Ranked review",
-        '<p class="lede">Rank 1 needs work first. Brief problems are landing_brief.py\'s own words. '
-        "Loop shows which Landing Loop steps each bet's record holds; the result is in the scorecard.</p>"
-        '<div class="tablewrap"><table><thead><tr><th class="num">Rank</th><th>Bet</th><th>Owner</th><th>Readiness</th><th>Gaps</th>'
-        f"<th>Loop</th><th>Next step</th></tr></thead><tbody>{rows}</tbody></table></div>",
-    )
-    cards = []
-    for r in pf.reviews:
-        items = [f"Source: {h(r.bet.source)}", f"Gaps: {h(gap_list(r))}"]
-        items += [f"landing_brief.py: {h(x)}" for x in r.problems if "no-brief" not in r.gaps]
-        if r.brief is not None:
-            items.append(f"Definition of good: {h(definition(r))}")
-        items += [h(x.rstrip(".")) for x in cost_lines(r)]
-        lis = "".join(f"<li>{x}</li>" for x in items)
-        cards.append(
-            f'<div class="card betcard"><h3><span>{r.rank} · {h(r.bet.id)}</span>{status_html(r)}</h3><p class="nm">{h(r.bet.name)}</p>'
-            f'<ul>{lis}</ul><p class="nx"><b>Next step</b>{h(r.next_step)}</p></div>'
-        )
-    each = section("04", "Each bet", f'<div class="grid g2">{"".join(cards)}</div>')
-    orphan_rows = "".join(
-        f"<tr><td>{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(o.why)}</td><td class='mo src'>{h(o.work.source)}</td></tr>" for o in pf.orphans
-    )
+    orphan_rows = "".join(f'<tr><td class="mo">{h(o.work.id)}</td><td>{h(o.work.title)}</td><td>{h(plain(o.why))}</td></tr>' for o in pf.orphans)
+    gaps = "".join(f"<div><dt>{h(LABELS[g])}</dt><dd><b>{c}</b> {'project' if c == 1 else 'projects'}</dd></div>" for g, c in pf.gap_counts.items() if c)
     orphans = section(
-        "05",
-        "Work linked to no bet",
-        f'<p class="lede">{h(orphan_move(pf.orphans))}</p>' + (table(["Item", "Title", "Why", "Source"], orphan_rows) if pf.orphans else ""),
+        "Work",
+        "Work linked to no project",
+        f'<p class="lede">{h(plain(orphan_move(pf.orphans)))}</p>'
+        f'<div class="cols"><div>{table(["Item", "Title", "Why"], orphan_rows) if pf.orphans else ""}</div>'
+        f'<div><dl class="figs">{gaps}</dl></div></div>',
     )
-    ev_rows = "".join(f'<tr><td>{h(a)}</td><td class="num">{h(b)}</td><td class="mo">{h(c)}</td></tr>' for a, b, c in figures_table(pf, sources))
-    evidence = section(
-        "06",
-        "Evidence",
-        table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))
-        + '<p class="asof">Computed by scripts/review.py. The readiness weights are in scripts/score.py; brief problems come from landing_brief.py.</p>',
+    figures = figures_table(pf, sources)
+    ev_rows = "".join(f'<tr><td>{h(plain(a))}</td><td class="num">{h(b)}</td><td class="mo src">{h(c)}</td></tr>' for a, b, c in figures)
+    detail = (
+        '<section class="slide"><div class="meta"><span>Detail</span></div>'
+        f"<details><summary>Evidence ledger ({plural(len(figures), 'figure')})</summary>"
+        f'{table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))}<p class="note">Computed by scripts/review.py from the files named.</p></details>'
+        f"{engineers(pf)}</section>"
     )
-    return "\n".join(
-        [
-            "<!DOCTYPE html>",
-            '<html lang="en">',
-            '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">',
-            f"<title>Bet portfolio review: {h(title)}</title>",
-            f"<style>{stylesheet()}{PAGE_CSS}</style></head>",
-            "<body><main>",
-            cover,
-            do_first,
-            scorecard,
-            ranked,
-            each,
-            orphans,
-            evidence,
-            "</main></body></html>",
-        ]
+    return (
+        '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<title>Portfolio review: {h(title)}</title><style>{stylesheet()}{sk.CSS}{PAGE_CSS}</style></head><body><main class="solo">'
+        f"{cover}{every}{orphans}{detail}"
+        '<p class="foot">A number moving is not proof that the project moved it. This review says whether each project is set up to be judged, '
+        "not whether it worked. Every figure is computed in code from the files named.</p></main></body></html>\n"
     )
 
 

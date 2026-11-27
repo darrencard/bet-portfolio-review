@@ -1,6 +1,6 @@
 [project]
 name = "bet-portfolio-review"
-version = "0.3.1"
+version = "0.3.2"
 description = "A Claude skill that scores a roadmap of bets against each bet's landing brief."
 requires-python = ">=3.11"
 # Standard library only, on purpose: the scripts run inside sandboxes that cannot install packages.
@@ -9,7 +9,13 @@ dependencies = []
 [tool.ruff]
 line-length = 160
 target-version = "py311"
+# svgkit is copied byte for byte from landing-loop at a pinned commit (see VENDORED.json); linted there, never edited here.
+extend-exclude = ["skills/bet-portfolio-review/scripts/vendor"]
 
 [tool.ruff.lint]
 # E, F: errors and unused names. I: import order. B: likely bugs. UP: old syntax. SIM: needless complexity. S: security.
 select = ["E", "F", "I", "B", "UP", "SIM", "S"]
+
+[tool.ruff.lint.per-file-ignores]
+# The page's CSS and plain-words tables read best one rule or entry per line.
+"skills/bet-portfolio-review/scripts/render.py" = ["E501"]
