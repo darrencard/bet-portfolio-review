@@ -25,7 +25,7 @@ Install the bet-portfolio-review skill from https://github.com/darrencard/bet-po
 
 ```text
 Do these first
-1. Supplier price sync (ACME-8): Quoting squad lead writes the landing brief.
+1. Supplier price sync (ACME-8): Lead, Quoting squad writes the landing brief.
 2. Auto match (ACME-5): Name one owner for this bet.
 3. SMS reminders (ACME-7): Link the work that delivers this bet, or cut the bet.
 ```

@@ -48,7 +48,7 @@
       },
       "as_of": "2026-07-27"
     },
-    "owner": "Quoting squad lead",
+    "owner": "Lead, Quoting squad",
     "decides": "",
     "gaps": [
       "no-brief"
@@ -56,6 +56,6 @@
     "brief_problems": [
       "the project description is empty."
     ],
-    "next_step": "Quoting squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line."
+    "next_step": "Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line."
   }
 }

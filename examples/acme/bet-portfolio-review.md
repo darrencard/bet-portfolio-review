@@ -8,7 +8,7 @@ Status words (landed, watch, stalled) are did-it-land's, read from each bet's lo
 
 ## Do these first
 
-1. **Supplier price sync (ACME-8):** Quoting squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
+1. **Supplier price sync (ACME-8):** Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
 2. **Auto match (ACME-5):** Name one owner for this bet.
 3. **SMS reminders (ACME-7):** Link the work that delivers this bet, or cut the bet.
 
@@ -33,10 +33,10 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 
 | Rank | Bet | Owner | Readiness | Gaps | Result | Loop | Next step |
 |---|---|---|---|---|---|---|---|
-| 1 | Supplier price sync (ACME-8) | Quoting squad lead | 4 of 14 (29%) | No landing brief | no result yet | spec no, evals no, cost no, result no | Quoting squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line. |
+| 1 | Supplier price sync (ACME-8) | Lead, Quoting squad | 4 of 14 (29%) | No landing brief | no result yet | spec no, evals no, cost no, result no | Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line. |
 | 2 | Auto match (ACME-5) | none | 11 of 14 (79%) | No owner; No result yet | no result yet | spec no, evals no, cost no, result no | Name one owner for this bet. |
 | 3 | SMS reminders (ACME-7) | Messaging squad lead | 13 of 14 (93%) | No work linked; No result yet | no result yet | spec no, evals no, cost no, result no | Link the work that delivers this bet, or cut the bet. |
-| 4 | Quote drafting (ACME-1) | Quoting squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
+| 4 | Quote drafting (ACME-1) | Lead, Quoting squad | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
 | 5 | Invoice chasing (ACME-2) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
 | 6 | Automatic reminders (ACME-3) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
 | 7 | Payment links (ACME-4) | Payments squad lead | 14 of 14 (100%) | No result yet | no result yet | spec no, evals no, cost no, result no | Next in the loop, 02 Spec: run spec-auditor on the bet's spec against this brief before build starts. |
@@ -47,14 +47,14 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 1. Supplier price sync (ACME-8)
 
 - Source: bets.csv row 9.
-- Owner: Quoting squad lead. Decides the next step: none named.
+- Owner: Lead, Quoting squad. Decides the next step: none named.
 - Readiness: 4 of 14 points (29%).
 - Gaps: No landing brief.
 - Cost: not checked. Run cost-budget-check.
 - Result: no result yet.
 - Loop: spec no, evals no, cost no, result no.
 - Linked work: 1 item.
-- **Next step:** Quoting squad lead writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
+- **Next step:** Lead, Quoting squad writes the landing brief: problem, definition of good, non-goals, cost budget, the line.
 
 ### 2. Auto match (ACME-5)
 
@@ -85,7 +85,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 4. Quote drafting (ACME-1)
 
 - Source: briefs/quote-drafting.md.
-- Owner: Quoting squad lead. Decides the next step: Head of Product, Quoting squad.
+- Owner: Lead, Quoting squad. Decides the next step: Head of Product, Quoting squad.
 - Readiness: 14 of 14 points (100%).
 - Gaps: No result yet.
 - Definition of good: Quote draft acceptance rate, bar 40%, higher is better, by 2026-11-15.
