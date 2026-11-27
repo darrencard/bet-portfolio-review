@@ -86,6 +86,6 @@ Templates for the two CSVs are in `skills/bet-portfolio-review/assets/`. Linear 
 - The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.11 or later; the scripts check first and stop with a plain message on anything older (try python3.12). Standard library only. MIT licensed. Version 0.3.3.
+Python 3.11 or later; the scripts check first and stop with a plain message on anything older (try python3.12). Standard library only. MIT licensed. Version 0.3.4.
 
 Claude and Claude Code are trademarks of Anthropic, PBC. These skills are independent and not affiliated with or endorsed by Anthropic.

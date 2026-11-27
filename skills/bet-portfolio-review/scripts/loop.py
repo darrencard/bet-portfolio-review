@@ -27,7 +27,7 @@ from load import Bet, LoadError
 from score import STATUS_WORDS, TOTAL, Portfolio, Review
 
 SCHEMA = "landing-loop/1"
-TOOL = "bet-portfolio-review 0.3.3"
+TOOL = "bet-portfolio-review 0.3.4"
 STEPS = ("spec", "evals", "cost", "landed")
 
 

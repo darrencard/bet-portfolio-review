@@ -353,7 +353,7 @@ PAGE_CSS = """
 main.solo{margin-left:0}
 .solo .slide{min-height:0}
 .solo .slide.cover{min-height:0;padding-top:40px;padding-bottom:48px;justify-content:flex-start}
-.solo h1{font-size:clamp(34px,4.6vw,60px);line-height:1;letter-spacing:-.04em;max-width:22ch;margin-bottom:20px}
+.solo h1{font-size:clamp(34px,4.6vw,60px);line-height:1;letter-spacing:-.04em;margin-bottom:20px;text-wrap:balance}
 .solo .lede{margin-bottom:28px}
 .solo .lede b{color:var(--t1);font-weight:500}
 .cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px 48px;align-items:start;margin-top:28px}
@@ -382,7 +382,7 @@ main.solo{margin-left:0}
 .steps .done{color:var(--t1)}.steps .todo{color:var(--t3)}
 .solo details{margin-top:20px}
 .solo details .tablewrap{margin-top:12px}
-.note{max-width:80ch;font-size:12.5px;line-height:1.6;color:var(--t2);margin:12px 0 0}
+.note{font-size:12.5px;line-height:1.6;color:var(--t2);margin:12px 0 0}
 .eng td{font-size:12px;vertical-align:top}
 .eng .chip{margin:0 4px 4px 0}
 td.src{white-space:normal;min-width:96px}
@@ -392,6 +392,9 @@ td.src{white-space:normal;min-width:96px}
 @media (max-width:1100px){.cols{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:980px){.foot{padding:24px 16px 48px}.solo .slide.cover{padding-top:24px}.projects{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:560px){.figs>div{grid-template-columns:1fr;gap:0}.project{padding:16px 16px 12px}}
+.solo h1,.solo .lede,.solo .next,.solo .slide p,.solo .slide li,.solo .sc-c,.sk figcaption{max-width:none}
+.solo .slide p,.solo .slide li,.solo .sc-c{text-wrap:pretty}
+.solo .cover .cols{grid-template-columns:minmax(0,1fr)}
 """
 
 

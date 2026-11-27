@@ -4,7 +4,7 @@ description: Scores a roadmap of projects (some teams call them bets; live from 
 license: MIT. See LICENSE in the repository root.
 metadata:
   author: Dacard
-  version: "0.3.3"
+  version: "0.3.4"
 ---
 
 # Portfolio review

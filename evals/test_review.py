@@ -759,9 +759,9 @@ class Page(unittest.TestCase):
         self.assertIn("<span>Portfolio review</span>", header)
         self.assertNotIn("bet-portfolio-review", header)
         fold = self.page.split("<summary>For your engineers</summary>", 1)[1]
-        self.assertIn("<code>bet-portfolio-review</code> 0.3.3", fold)
+        self.assertIn("<code>bet-portfolio-review</code> 0.3.4", fold)
         md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8")
-        self.assertIn("Skill: bet-portfolio-review 0.3.3.", md.split("## For your engineers", 1)[1])
+        self.assertIn("Skill: bet-portfolio-review 0.3.4.", md.split("## For your engineers", 1)[1])
 
     def test_no_internal_words_in_public_copy(self):
         banned = re.compile(r"\b(records?|bets?|the bar|PRDs?|ARR|tokens?)\b", re.I)
@@ -846,6 +846,25 @@ class Hygiene(unittest.TestCase):
                 continue
             with self.subTest(path=p.name):
                 self.assertIsNone(banned.search(p.read_text(encoding="utf-8")))
+
+
+class FullColumn(unittest.TestCase):
+    """Text runs the full content column, as wide as the scorecard frame (2026-11-27): no max-width on h1, .lede or p."""
+
+    def test_page_css_sets_no_max_width_on_text(self) -> None:
+        css = render.PAGE_CSS
+        for selector, body in re.findall(r"([^{}]+)\{([^}]*max-width:[^}]*)\}", css):
+            if re.search(r"(^|[\s,])(h1|\.lede|p|li|\.next|\.note|\.figs|\.checks)([\s,:.]|$)", selector):
+                self.assertIn("max-width:none", body, selector)
+        self.assertIn(".solo h1,.solo .lede,.solo .next,.solo .slide p,.solo .slide li,.solo .sc-c,.sk figcaption{max-width:none}", css)
+        self.assertIn("text-wrap:balance", css)
+        self.assertIn(".solo .slide p,.solo .slide li,.solo .sc-c{text-wrap:pretty}", css)
+        self.assertIn(".solo .cover .cols{grid-template-columns:minmax(0,1fr)}", css, "the next step runs the full column, not half of it")
+
+    def test_the_override_comes_after_the_template_cap(self) -> None:
+        page = (Path(__file__).resolve().parents[1] / "examples/acme/bet-portfolio-review.html").read_text(encoding="utf-8")
+        css = page.split("<style>", 1)[1].split("</style>", 1)[0]
+        self.assertGreater(css.rindex("{max-width:none}"), css.index("max-width:62ch"))
 
 
 if __name__ == "__main__":
