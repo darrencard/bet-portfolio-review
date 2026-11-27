@@ -6,13 +6,20 @@ A free Claude skill that scores every bet on your roadmap against its landing br
 
 **How it works:** Python computes every score and count, with a source for each. Brief completeness is the landing brief parser's own check, word for word, and landed, watch or stalled comes only from did-it-land. The model never does the arithmetic, and a rewrite that adds a number, changes a status word or claims cause fails the check.
 
-## Install: paste this into Claude Code
+## Install
+
+In Claude Code:
+
+```text
+/plugin marketplace add darrencard/landing-loop
+/plugin install bet-portfolio-review@landing-loop
+```
+
+Standalone, paste this into Claude Code:
 
 ```text
 Install the bet-portfolio-review skill from https://github.com/darrencard/bet-portfolio-review: clone it, run python3 -m unittest discover -s evals and stop if any test fails, then copy skills/bet-portfolio-review into ~/.claude/skills/. Then review my roadmap: read the Linear projects and issues already connected to this session (or my Jira search results through the Jira connector, or ask me for a CSV), run the review as of today, and show me the ranked table, the work linked to no bet and the top three next steps.
 ```
-
-The repository is private until review, so the clone needs `gh` signed in with access.
 
 **See it first:** the sample page is [examples/acme/bet-portfolio-review.html](examples/acme/bet-portfolio-review.html), reviewing the illustrative Acme roadmap. `--demo` runs a second, smaller fixture in one command: `python3 skills/bet-portfolio-review/scripts/review.py --demo --out run`.
 
@@ -35,7 +42,7 @@ A test runs that exact line on a fresh copy and checks the output matches the co
 
 ## Step 01 of the Landing Loop: Decide
 
-Five skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 01, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
+Eleven skills and the [Product & Technology Leader Report](https://github.com/darrencard/product-engineering-update) work on one landing brief per bet, and share one record per bet, `landing/<bet-slug>.json`. This skill is step 01, Decide: it writes only the record's `portfolio` key, and its review shows how far each bet has got through the other steps (spec, evals, cost, result).
 
 ## What it checks
 
@@ -81,4 +88,6 @@ Templates for the two CSVs are in `skills/bet-portfolio-review/assets/`. Linear 
 - The Leader Report's landing brief parser, Linear and Jira readers, and style, copied unchanged at one pinned commit (`skills/bet-portfolio-review/VENDORED.json`; a test checks every hash).
 - Orphan and data-gap checks ported to Python from Throughline, Dacard's R&D prototype.
 
-Python 3.9 or later, standard library only. MIT licensed. Version 0.3.0.
+Python 3.9 or later, standard library only. MIT licensed. Version 0.3.1.
+
+Claude and Claude Code are trademarks of Anthropic, PBC. These skills are independent and not affiliated with or endorsed by Anthropic.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.1 (2026-11-26)
+
+- README: install through the Landing Loop bundle (`/plugin marketplace add darrencard/landing-loop`, then `/plugin install bet-portfolio-review@landing-loop`), with the paste-in prompt kept for a standalone install.
+- README: the repository is public, so the private-until-review notes are gone, and the loop is counted as eleven skills plus the Product & Technology Leader Report.
+- README: one trademark line for Claude and Claude Code.
+- No change to what the skill computes. The version in the sample record's `tool` field moves with the release.
+
 ## 0.3.0 (2026-11-26)
 
 - Sample: `examples/acme/` reads the canonical Acme landing briefs shared by the Landing Loop skills and renders `bet-portfolio-review.html`, with its Markdown and JSON twins and the `portfolio` key of `landing/quote-drafting.json`. The README's Sample section has the one command; a test checks it reproduces the committed files byte for byte.

@@ -1,6 +1,6 @@
 {
   "name": "bet-portfolio-review",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Score a roadmap of bets against each bet's landing brief. Flags bets with no brief, metric, owner, non-goals or cost budget, and work linked to no bet. Every figure is computed in code and carries its source.",
   "author": { "name": "Dacard" },
   "license": "MIT"

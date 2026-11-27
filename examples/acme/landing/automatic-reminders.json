@@ -6,7 +6,7 @@
     "sha256": "7c768f623c57f867df53c20242cdf4849f3146d0ba214abb593f42db7a6291d3"
   },
   "portfolio": {
-    "tool": "bet-portfolio-review 0.3.0",
+    "tool": "bet-portfolio-review 0.3.1",
     "as_of": "2026-07-27",
     "rank": {
       "value": 6,
