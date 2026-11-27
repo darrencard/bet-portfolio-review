@@ -253,7 +253,7 @@ class Cost(unittest.TestCase):
         record = json.loads((ACME / "landing" / "job-summary-drafting.json").read_text(encoding="utf-8"))
         r = score.review_bet(bet(), [work()], AS_OF, record)
         line = render.cost_text(r)
-        self.assertIn("AI usage per task 8,400 tokens", line)
+        self.assertIn("AI usage per task 8,400;", line)  # the count prints without the word tokens
         self.assertIn("AI price per unit 0.000003 USD", line)
         self.assertNotIn("0.027", line, "no product of the two is computed")
 
@@ -696,6 +696,34 @@ class Page(unittest.TestCase):
         md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8").lower()
         for word in (" bet ", " bets ", "the line.", "02 spec", "## do these first"):
             self.assertNotIn(word, md, word)
+
+    def test_no_text_smaller_than_11px(self):
+        for page in (self.page, self.demo):
+            css = "".join(re.findall(r"<style>(.*?)</style>", page, re.S))
+            decls = re.findall(r"font(?:-size)?:[^;}]*", css)
+            self.assertTrue(decls)
+            sizes = [float(n) for d in decls for n in re.findall(r"(?<![/\d.])(\d+(?:\.\d+)?)px", d)]
+            self.assertGreaterEqual(min(sizes), 11, "a font size below 11px")
+            self.assertNotRegex(page, r'font-size="(\d|10)(\.\d+)?"', "an SVG label below 11px")
+        template = (SKILL / "assets" / "leader-report-template.html").read_text(encoding="utf-8")
+        self.assertIn("font:400 10px/16px var(--mono)", template, "the template stays as vendored; the page raises its sizes")
+
+    def test_header_prints_the_plain_name_and_the_fold_the_code_name(self):
+        header = re.search(r'<header class="sk-hdr">.*?</header>', self.page, re.S).group(0)
+        self.assertIn("<span>Portfolio review</span>", header)
+        self.assertNotIn("bet-portfolio-review", header)
+        fold = self.page.split("<summary>For your engineers</summary>", 1)[1]
+        self.assertIn("<code>bet-portfolio-review</code> 0.3.2", fold)
+        md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8")
+        self.assertIn("Skill: bet-portfolio-review 0.3.2.", md.split("## For your engineers", 1)[1])
+
+    def test_no_internal_words_in_public_copy(self):
+        banned = re.compile(r"\b(records?|bets?|the bar|PRDs?|ARR|tokens?)\b", re.I)
+        for page in (self.page, self.demo):
+            public = re.sub(r"<details><summary>For your engineers</summary>.*?</details>", " ", page.split("</style>", 1)[1], flags=re.S)
+            self.assertIsNone(banned.search(svgkit.page_text(public)), "internal word on the page")
+        md = (ROOT / "examples" / "acme" / "bet-portfolio-review.md").read_text(encoding="utf-8")
+        self.assertIsNone(banned.search(md.split("## For your engineers", 1)[0]), "internal word in the Markdown twin")
 
     def test_svgkit_matches_its_landing_loop_pin(self):
         pin = json.loads((SKILL / "VENDORED.json").read_text(encoding="utf-8"))["landing-loop"]

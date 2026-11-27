@@ -53,7 +53,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 4 of 14 points (29%). Source: bets.csv row 9.
+- Readiness: 4 of 14 points (29%).
 - **Next step:** Owner: Lead, Quoting squad. Write the landing brief: the problem, what good looks like, what is out of scope, the cost budget, and who does what (a person or the software).
 
 ### 2. Auto match (ACME-5)
@@ -65,7 +65,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 11 of 14 points (79%). Source: briefs/auto-match.md.
+- Readiness: 11 of 14 points (79%).
 - **Next step:** Name one owner for this project.
 
 ### 3. SMS reminders (ACME-7)
@@ -77,7 +77,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 13 of 14 points (93%). Source: briefs/sms-reminders.md.
+- Readiness: 13 of 14 points (93%).
 - **Next step:** Link the work that delivers this project, or cut the project.
 
 ### 4. Quote drafting (ACME-1)
@@ -89,7 +89,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 14 of 14 points (100%). Source: briefs/quote-drafting.md.
+- Readiness: 14 of 14 points (100%).
 - **Next step:** Next: check the build plan against this landing brief before build starts.
 
 ### 5. Invoice chasing (ACME-2)
@@ -101,7 +101,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 14 of 14 points (100%). Source: briefs/invoice-chasing.md.
+- Readiness: 14 of 14 points (100%).
 - **Next step:** Next: check the build plan against this landing brief before build starts.
 
 ### 6. Automatic reminders (ACME-3)
@@ -113,7 +113,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 14 of 14 points (100%). Source: briefs/automatic-reminders.md.
+- Readiness: 14 of 14 points (100%).
 - **Next step:** Next: check the build plan against this landing brief before build starts.
 
 ### 7. Payment links (ACME-4)
@@ -125,7 +125,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 14 of 14 points (100%). Source: briefs/payment-links.md.
+- Readiness: 14 of 14 points (100%).
 - **Next step:** Next: check the build plan against this landing brief before build starts.
 
 ### 8. Job scheduler (ACME-6)
@@ -137,7 +137,7 @@ Rank 1 needs work first. Steps done shows which Landing Loop steps the project's
 - Cost: not checked yet (cost-budget-check).
 - Result: no result yet.
 - Steps done: build plan checked no, quality tested no, cost checked no, result no.
-- Readiness: 14 of 14 points (100%). Source: briefs/job-scheduler.md.
+- Readiness: 14 of 14 points (100%).
 - **Next step:** Next: check the build plan against this landing brief before build starts.
 
 ## Work linked to no project
@@ -163,15 +163,28 @@ Link or cut: 2 items with no project, 1 item linked to a project not on the road
 
 | Figure | Value | Computed from |
 |---|---|---|
-| Projects on the roadmap | 8 | bets.csv |
-| Projects whose landing brief is complete | 7 | bets.csv |
-| Work items | 18 | work.csv |
-| Work items linked to no project | 3 | bets.csv, work.csv |
-| Share of work linked to a project | 83% | bets.csv, work.csv |
-| Share of work under a project whose landing brief is complete | 78% | bets.csv, work.csv |
-| Projects marked landed | 0 | landing/*.json (landed.status, written by did-it-land) |
-| Projects marked watch | 0 | landing/*.json (landed.status, written by did-it-land) |
-| Projects marked stalled | 0 | landing/*.json (landed.status, written by did-it-land) |
-| Projects with no result yet | 8 | landing/*.json (landed.status, written by did-it-land) |
+| Projects on the roadmap | 8 | the roadmap |
+| Projects whose landing brief is complete | 7 | the roadmap |
+| Work items | 18 | the work list |
+| Work items linked to no project | 3 | the roadmap and the work list |
+| Share of work linked to a project | 83% | the roadmap and the work list |
+| Share of work under a project whose landing brief is complete | 78% | the roadmap and the work list |
+| Projects marked landed | 0 | each project's file, as did-it-land wrote it |
+| Projects marked watch | 0 | each project's file, as did-it-land wrote it |
+| Projects marked stalled | 0 | each project's file, as did-it-land wrote it |
+| Projects with no result yet | 8 | each project's file, as did-it-land wrote it |
+
+## For your engineers
+
+Skill: bet-portfolio-review 0.3.2. Files read: bets.csv (the roadmap), work.csv (the work list), landing/*.json (the project files).
+
+- Supplier price sync (ACME-8): bets.csv row 9.
+- Auto match (ACME-5): briefs/auto-match.md.
+- SMS reminders (ACME-7): briefs/sms-reminders.md.
+- Quote drafting (ACME-1): briefs/quote-drafting.md.
+- Invoice chasing (ACME-2): briefs/invoice-chasing.md.
+- Automatic reminders (ACME-3): briefs/automatic-reminders.md.
+- Payment links (ACME-4): briefs/payment-links.md.
+- Job scheduler (ACME-6): briefs/job-scheduler.md.
 
 Computed by scripts/review.py. The readiness weights are in scripts/score.py; the landing brief check is landing_brief.py.

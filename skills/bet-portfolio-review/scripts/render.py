@@ -39,6 +39,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor"))
 import svgkit as sk  # noqa: E402  (vendored, unchanged; see VENDORED.json)
 
 TEMPLATE = Path(__file__).resolve().parent.parent / "assets" / "leader-report-template.html"
+NAME = "Portfolio review"  # the page prints its plain name; the code name sits in the engineers' fold
+CODE_NAME = "bet-portfolio-review"
+MIN_FONT_PX = 11  # no text on the page prints smaller, at any width
 Progress = dict[str, Any]
 
 NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -71,6 +74,7 @@ WORDS = (
     ),
     (r"Run did-it-land on (.+?)(,| once)", r"Read \1 against its target\2"),
     (r"\bFix the brief\b", "Fix the landing brief"),
+    (r"^Record it as landed\.", "Mark it landed in the project file."),
     (r"\bnon goals\b", "what is out of scope"),
     (r"\btokens per task\b", "AI usage per task"),
     (r"\bprice per token\b", "AI price per unit"),
@@ -183,7 +187,8 @@ def figure_text(f: Any) -> str:
     else:
         whole, _, frac = format(decimal.Decimal(str(v)), "f").partition(".")
         value = f"{int(whole):,}" + (f".{frac}" if frac.strip("0") else "")
-    return f"{value} {f.get('unit', '')}".strip()
+    unit = str(f.get("unit", ""))
+    return f"{value} {'' if unit in ('token', 'tokens') else unit}".strip()  # AI usage reads as a count, not in tokens
 
 
 def cost_text(r: Review) -> str:
@@ -268,7 +273,7 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
         out.append(f"- Cost: {md(cost_text(r))}.")
         out.append(f"- Result: {status_text(r)}.")
         out.append(f"- Steps done: {loop_cell(r, loop)}.")
-        out.append(f"- Readiness: {r.points} of {TOTAL} points ({r.percent}%). Source: {md(r.bet.source)}.")
+        out.append(f"- Readiness: {r.points} of {TOTAL} points ({r.percent}%).")
         out.append(f"- **Next step:** {md(plain(r.next_step))}")
         out.append("")
     out += ["## Work linked to no project", "", plain(orphan_move(pf.orphans)), ""]
@@ -280,9 +285,44 @@ def to_markdown(pf: Portfolio, title: str, sources: dict[str, str], illustrative
     out += [f"| {LABELS[g]} | {c} |" for g, c in pf.gap_counts.items() if c]
     out += ["", "## Evidence", "", "| Figure | Value | Computed from |", "|---|---|---|"]
     for name, value, src in figures_table(pf, sources):
-        out.append(f"| {plain(name)} | {value} | {md(src)} |")
+        out.append(f"| {plain(name)} | {value} | {plain_source(src, sources)} |")
+    out += ["", "## For your engineers", "", f"Skill: {CODE_NAME} {TOOL.rsplit(' ', 1)[-1]}. Files read: {md(files_read(sources))}.", ""]
+    out += [f"- {md(r.bet.name)} ({md(r.bet.id)}): {md(r.bet.source)}." for r in pf.reviews]
     out += ["", "Computed by scripts/review.py. The readiness weights are in scripts/score.py; the landing brief check is landing_brief.py.", ""]
     return "\n".join(out)
+
+
+def plain_source(src: str, sources: dict[str, str] | None) -> str:
+    """Where a figure came from, in plain words. The file names sit in the engineers' fold and the JSON."""
+    s = sources or {}
+    bets, work, records = s.get("bets", ""), s.get("work", ""), s.get("records", "")
+    words = {
+        bets: "the roadmap",
+        work: "the work list",
+        ", ".join(x for x in (bets, work) if x): "the roadmap and the work list",
+        f"{records} (landed.status, written by did-it-land)": "each project's file, as did-it-land wrote it",
+        "no loop records read": "no project files read",
+        "none given": "none given",
+        "": "not named",
+    }
+    return words.get(src, "the files read")
+
+
+def files_read(sources: dict[str, str] | None) -> str:
+    """The files behind the review, by name, for the engineers' fold."""
+    s = sources or {}
+    named = [(s.get("bets", ""), "the roadmap"), (s.get("work", ""), "the work list"), (s.get("records", ""), "the project files")]
+    return ", ".join(f"{v} ({k})" for v, k in named if v) or "none named"
+
+
+def floor_fonts(css: str) -> str:
+    """Every font size in the page's CSS at MIN_FONT_PX or more. The vendored template and svgkit stay byte-identical;
+    their smaller label sizes are raised here, as the page is written. A line height (after the slash) is left alone."""
+
+    def raise_px(decl: re.Match[str]) -> str:
+        return re.sub(r"(?<![/\d.])(\d+(?:\.\d+)?)px", lambda m: f"{MIN_FONT_PX}px" if float(m.group(1)) < MIN_FONT_PX else m.group(0), decl.group(0))
+
+    return re.sub(r"font(?:-size)?:[^;}]*", raise_px, css)
 
 
 def figures_table(pf: Portfolio, sources: dict[str, str] | None = None) -> list[tuple[str, str, str]]:
@@ -316,15 +356,15 @@ main.solo{margin-left:0}
 .cols{display:grid;grid-template-columns:minmax(0,640px) minmax(260px,1fr);gap:28px 48px;align-items:start}
 .side{display:grid;gap:24px}
 .next{display:grid;gap:10px;border:1px solid var(--brass);border-radius:12px;padding:20px 22px;background:var(--brass-bg)}
-.next>b{font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.next>b{font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
 .next p{margin:0;font-size:16px;line-height:1.5;color:var(--t1)}
 .next p span{color:var(--t2)}
 .who{display:flex;flex-wrap:wrap;gap:4px 24px;font:400 11.5px/18px var(--mono);color:var(--brass)}
-.who i{font-style:normal;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
+.who i{font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-right:8px}
 .who .d{color:var(--t2)}
 .figs{margin:0;display:grid}
 .figs>div{display:grid;grid-template-columns:120px minmax(0,1fr);gap:4px 16px;border-top:1px solid var(--line);padding:10px 0}
-.figs dt{font:400 10px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.figs dt{font:400 11px/22px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
 .figs dd{margin:0;font-size:13.5px;line-height:1.55;color:var(--t2)}
 .figs dd b{color:var(--t1);font-weight:500}
 .figs .own dt{color:var(--brass)}
@@ -332,9 +372,9 @@ main.solo{margin-left:0}
 .projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--s1)}
 .project{padding:20px 24px 14px;box-shadow:-1px 0 0 var(--line),0 -1px 0 var(--line)}
 .project h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 10px;font:600 18px/1.25 var(--display);letter-spacing:-.02em;color:var(--t1)}
-.project h3 .rk{font:400 10px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
+.project h3 .rk{font:400 11px/16px var(--mono);letter-spacing:.1em;color:var(--t3);margin-right:10px}
 .project .figs>div:first-child{border-top:0}
-.nos{white-space:nowrap;font:400 10px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.nos{white-space:nowrap;font:400 11px/16px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip.off{color:var(--t3);border-style:dashed}
 .solo details{margin-top:20px}
@@ -520,7 +560,7 @@ def section(label: str, title: str, body: str) -> str:
     return f'<section class="slide"><div class="meta"><span>{h(label)}</span></div><h2>{h(title)}</h2>{body}</section>'
 
 
-def engineers(pf: Portfolio) -> str:
+def engineers(pf: Portfolio, sources: dict[str, str] | None = None) -> str:
     """Gap codes, the parser's own words, files, flags and the record key: none of it is needed to act on the review."""
     rows = []
     for r in pf.reviews:
@@ -531,6 +571,8 @@ def engineers(pf: Portfolio) -> str:
             f'<td>{codes}</td><td>{said}</td><td class="mo src">{h(r.bet.source)}</td></tr>'
         )
     note = (
+        f'<p class="note">Skill: <code>{CODE_NAME}</code> {h(TOOL.rsplit(" ", 1)[-1])}. Files read: {h(files_read(sources))}. '
+        "Every figure is computed by scripts/review.py from those files.</p>"
         '<p class="note">With <code>--landing</code>, the review adds its page to each project file: the <code>portfolio</code> key of '
         "<code>landing/&lt;slug&gt;.json</code>, and no other key. <code>--fail-on no-owner,no-brief</code> exits 2 for CI when any project has "
         f"one of those gaps. Readiness is scored in scripts/score.py: owner 3, landing brief 10, linked work 1, out of {TOTAL}. Whether a brief is "
@@ -542,7 +584,7 @@ def engineers(pf: Portfolio) -> str:
 
 def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bool, loop: dict[str, Progress | None] | None = None) -> str:
     version = "v" + TOOL.rsplit(" ", 1)[-1]
-    header = sk.page_header("bet-portfolio-review", date=f"Review {pf.as_of}", version=version, illustrative=illustrative)
+    header = sk.page_header(NAME, date=f"Review {pf.as_of}", version=version, illustrative=illustrative)
     lede = (
         "A project is a piece of work you expect to move a number. Each one is checked against its <b>landing brief</b>, a one-page plan: "
         "what good looks like, by when, at what cost. Ready means one owner, a complete landing brief and work linked to it."
@@ -569,16 +611,16 @@ def to_html(pf: Portfolio, title: str, sources: dict[str, str], illustrative: bo
         f'<div><dl class="figs">{gaps}</dl></div></div>',
     )
     figures = figures_table(pf, sources)
-    ev_rows = "".join(f'<tr><td>{h(plain(a))}</td><td class="num">{h(b)}</td><td class="mo src">{h(c)}</td></tr>' for a, b, c in figures)
+    ev_rows = "".join(f'<tr><td>{h(plain(a))}</td><td class="num">{h(b)}</td><td>{h(plain_source(c, sources))}</td></tr>' for a, b, c in figures)
     detail = (
         '<section class="slide"><div class="meta"><span>Detail</span></div>'
         f"<details><summary>Evidence ledger ({plural(len(figures), 'figure')})</summary>"
-        f'{table(["Figure", "Value", "Computed from"], ev_rows, num=(1,))}<p class="note">Computed by scripts/review.py from the files named.</p></details>'
-        f"{engineers(pf)}</section>"
+        f"{table(['Figure', 'Value', 'Computed from'], ev_rows, num=(1,))}</details>"
+        f"{engineers(pf, sources)}</section>"
     )
     return (
         '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-        f'<title>Portfolio review: {h(title)}</title><style>{stylesheet()}{sk.CSS}{PAGE_CSS}</style></head><body><main class="solo">'
+        f'<title>Portfolio review: {h(title)}</title><style>{floor_fonts(stylesheet() + sk.CSS + PAGE_CSS)}</style></head><body><main class="solo">'
         f"{cover}{every}{orphans}{detail}"
         '<p class="foot">A number moving is not proof that the project moved it. This review says whether each project is set up to be judged, '
         "not whether it worked. Every figure is computed in code from the files named.</p></main></body></html>\n"
