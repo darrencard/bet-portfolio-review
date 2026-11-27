@@ -59,7 +59,7 @@ Rank 1 needs work first. Brief problems are landing_brief.py's own words. Loop s
 ### 2. Auto match (ACME-5)
 
 - Source: briefs/auto-match.md.
-- Owner: none. Decides the next step: Head of Finance Product, Ledger squad.
+- Owner: none. Decides the next step: Head of Product, Ledger squad.
 - Readiness: 11 of 14 points (79%).
 - Gaps: No owner; No result yet.
 - Definition of good: Invoice auto-match rate, bar 80%, higher is better, by 2026-12-31.
